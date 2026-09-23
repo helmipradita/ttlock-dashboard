@@ -95,11 +95,20 @@ export function TopologyOverlay({
             </div>
           </DialogHeader>
 
-          <canvas
-            ref={canvasRef}
-            className="flex-1 w-full cursor-grab"
-            style={{ minHeight: 0 }}
-          />
+          <div className="flex-1 flex items-center justify-center p-4 overflow-hidden">
+            <div className="relative w-full h-full max-w-full max-h-full flex items-center justify-center">
+              <canvas
+                ref={canvasRef}
+                className="cursor-grab rounded-xl ring-1 ring-white/10 shadow-2xl"
+                style={{
+                  aspectRatio: "1 / 1",
+                  maxWidth: "100%",
+                  maxHeight: "100%",
+                  touchAction: "none",
+                }}
+              />
+            </div>
+          </div>
 
           <div className="flex gap-5 px-5 py-2.5 bg-gray-800 border-t border-gray-700 text-xs text-gray-400 shrink-0">
             <span>

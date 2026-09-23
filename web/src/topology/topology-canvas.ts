@@ -424,8 +424,9 @@ export function initCanvas(
   const handleWheel = (e: WheelEvent) => onWheel(state, e, canvas);
   const handleResize = () => {
     const r = canvas.getBoundingClientRect();
-    canvas.width = r.width * dpr;
-    canvas.height = r.height * dpr;
+    const newDpr = window.devicePixelRatio || 1;
+    canvas.width = r.width * newDpr;
+    canvas.height = r.height * newDpr;
   };
 
   canvas.addEventListener("mousedown", handleMouseDown);

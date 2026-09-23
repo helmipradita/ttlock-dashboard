@@ -102,7 +102,17 @@ export function GatewaysSection({ onOpenTopology }: Props) {
           </TableHeader>
           <TableBody>
             {sorted.map((gw: GatewayInfo) => (
-              <TableRow key={gw.gatewayId}>
+              <TableRow
+                key={gw.gatewayId}
+                className="cursor-pointer hover:bg-muted/60 transition-colors"
+                onClick={() =>
+                  onOpenTopology(
+                    gw.gatewayId,
+                    gw.networkName || String(gw.gatewayId),
+                    gw.lockNum ?? 0
+                  )
+                }
+              >
                 <TableCell className="font-semibold">{gw.gatewayId}</TableCell>
                 <TableCell className="font-mono text-xs">{gw.gatewayMac || "-"}</TableCell>
                 <TableCell>{gw.networkName || "-"}</TableCell>
@@ -119,18 +129,7 @@ export function GatewaysSection({ onOpenTopology }: Props) {
                   )}
                 </TableCell>
                 <TableCell>
-                  <Button
-                    size="sm"
-                    onClick={() =>
-                      onOpenTopology(
-                        gw.gatewayId,
-                        gw.networkName || String(gw.gatewayId),
-                        gw.lockNum ?? 0
-                      )
-                    }
-                  >
-                    Topology ({gw.lockNum ?? 0})
-                  </Button>
+                  Topology ({gw.lockNum ?? 0})
                 </TableCell>
               </TableRow>
             ))}

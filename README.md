@@ -8,7 +8,7 @@ Web dashboard untuk **monitoring** smart lock TTLOCK (read-only). Menampilkan in
 
 - **Auto Login** — Otomatis login ke TTLOCK API saat server start
 - **Lock History** — Cek riwayat pembukaan berdasarkan Lock ID
-- **All Lockboxes** — List semua lockbox dengan last open time (dari cache server, auto-refresh 5 menit)
+- **All Lockboxes** — List semua lockbox dengan last open time (auto-refresh 5 menit)
 - **Sortable Table** — Sort semua kolom ascending/descending
 - **Gateway List** — List semua gateway dengan jumlah lockbox tersambung, status online/offline
 - **Gateway Topology** — Visual interaktif (canvas) gateway → lockbox, animasi garis, RSSI per koneksi, refresh 1 detik, drag/pan/zoom, posisi disimpan di localStorage
@@ -18,53 +18,57 @@ Web dashboard untuk **monitoring** smart lock TTLOCK (read-only). Menampilkan in
 ## Tech Stack
 
 - **Backend**: Express.js + TypeScript
-- **Frontend**: HTML + CSS + Vanilla JavaScript + Canvas API
+- **Frontend**: React + TypeScript + Vite + shadcn/ui + TanStack Query + Tailwind CSS
+- **Production**: nginx (reverse proxy + static) + Node.js backend
 - **API**: TTLOCK Open Platform API v3
 
 ## Prerequisites
 
-- Node.js 18+
+- Node.js 18+ (development) / Node.js 22 (Docker)
 - npm
+- Docker & Docker Compose (untuk production)
 - Akun TTLOCK developer (client_id, client_secret)
 - Akun TTLOCK APP (username, password MD5)
 
 ## Setup
 
-### Manual
+### Development (2 terminal)
 
 ```bash
-# Clone
 git clone https://github.com/helmipradita/ttlock-dashboard.git
 cd ttlock-dashboard
 
-# Backend
+# Terminal 1: Backend
 cd backend
 cp .env.example .env   # Isi credential TTLOCK
 npm install
-npm run dev
+npm run dev            # http://localhost:5757
 
-# Buka browser
-# http://localhost:5757
+# Terminal 2: Frontend
+cd web
+npm install
+npm run dev            # http://localhost:5173 (proxy /api → :5757)
 ```
 
-### Docker
+### Docker (production)
 
 ```bash
-# Clone
 git clone https://github.com/helmipradita/ttlock-dashboard.git
 cd ttlock-dashboard
 
 # Setup env
-cd backend
-cp .env.example .env   # Isi credential TTLock
-cd ..
+cp backend/.env.example backend/.env   # Isi credential TTLock
 
-# Run
-docker compose up -d
+# Build & run (nginx expose port 5757)
+docker compose up -d --build
 
 # Buka browser
 # http://localhost:5757
 ```
+
+**Arsitektur Docker:**
+- `web-nginx` — nginx serve static React build + reverse proxy `/api/*` → backend (port 5757)
+- `backend` — Express API server (listen port 5000 internal, tidak expose ke host)
 
 ## Deployment Notes
 
@@ -72,11 +76,7 @@ Dashboard ini bersifat **temporary** — gunakan hanya saat diperlukan.
 
 - Setelah selesai digunakan, **wajib menghentikan** service:
   ```bash
-  # Docker
   docker compose down
-
-  # Atau jika menjalankan manual
-  # Ctrl+C pada terminal backend
   ```
 - Jika menggunakan **ngrok**, URL bersifat rotasi/temporer dan tidak boleh dibiarkan tetap aktif.
 - Credential di `backend/.env` bersifat rahasia — jangan commit atau bagikan publik.
@@ -88,7 +88,7 @@ CLIENT_ID=your_app_id           # Dari TTLOCK developer portal
 CLIENT_SECRET=your_app_secret   # Dari TTLOCK developer portal
 USERNAME=your_ttlock_email      # Akun TTLock APP (email)
 PASSWORD=your_md5_password      # Password dalam MD5 hash
-PORT=5757
+PORT=5757                       # Default backend port (Docker override ke 5000)
 ```
 
 ## API Endpoints
@@ -108,25 +108,35 @@ PORT=5757
 
 ```
 TTLOCK/
-├── Dockerfile
-├── docker-compose.yml
+├── docker-compose.yml       # nginx + backend (2 services, 1 port)
+├── Dockerfile.backend       # Build backend TS → Node runtime
+├── Dockerfile.web           # Build React → nginx static
+├── nginx/nginx.conf         # Reverse proxy /api → backend, SPA static
 ├── README.md
 ├── backend/
 │   ├── package.json
 │   ├── tsconfig.json
 │   ├── .env.example
 │   └── src/
-│       ├── main.ts       # Express entry point
-│       ├── config.ts     # Load environment
+│       ├── main.ts          # Express entry point
+│       ├── config.ts        # Load environment
 │       ├── services/
 │       │   └── ttlock.service.ts
 │       └── routes/
 │           └── ttlock.routes.ts
-├── frontend/
-│   ├── index.html        # Tab nav + sections + topology overlay
-│   ├── style.css         # Styling + topology overlay
-│   ├── app.js            # Main logic + gateway table
-│   └── topology.js       # Canvas topology renderer
+├── frontend/                # Legacy vanilla JS (unused in Docker)
+├── web/                     # React + Vite + shadcn/ui
+│   ├── vite.config.ts
+│   ├── components.json
+│   ├── src/
+│   │   ├── main.tsx
+│   │   ├── App.tsx
+│   │   ├── api/             # Typed API client
+│   │   ├── components/      # React components
+│   │   ├── hooks/           # Custom hooks
+│   │   ├── lib/             # Utilities
+│   │   └── topology/        # Canvas topology renderer
+│   └── package.json
 ```
 
 ## License
