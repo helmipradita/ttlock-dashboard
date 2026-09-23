@@ -260,27 +260,9 @@ async function loadAllLocks() {
   tbody.innerHTML = "";
 
   try {
-    const data = await apiFetch("/api/locks");
+    const data = await apiFetch("/api/locks/enriched");
     allLocksData = data.list || [];
-
-    if (allLocksData.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#9ca3af;">No lockboxes found</td></tr>';
-      loadingEl.classList.add("hidden");
-      updateLockCount(0);
-      return;
-    }
-
-    enrichedLocks = [];
-    for (const lock of allLocksData) {
-      let lastOpen = null;
-      try {
-        const records = await apiFetch(`/api/locks/${lock.lockId}/records?pageNo=1&pageSize=1`);
-        if (records.list && records.list.length > 0) {
-          lastOpen = records.list[0].lockDate;
-        }
-      } catch (e) {}
-      enrichedLocks.push({ ...lock, lastOpen });
-    }
+    enrichedLocks = allLocksData;
 
     updateLockCount(enrichedLocks.length);
     renderAllLocks();

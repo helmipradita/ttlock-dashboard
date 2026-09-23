@@ -1,13 +1,14 @@
 # TTLOCK Dashboard
 
-Web dashboard untuk monitoring dan management smart lock TTLOCK. Menampilkan info lock, riwayat pembukaan, dan status semua lockbox dalam satu halaman.
+Web dashboard untuk **monitoring** smart lock TTLOCK (read-only). Menampilkan info lock, riwayat pembukaan, dan status semua lockbox dalam satu halaman.
+
+> **Catatan:** Dashboard ini bersifat **ephemeral** — hanya dijalankan saat dibutuhkan, lalu dihentikan setelah selesai digunakan.
 
 ## Features
 
 - **Auto Login** — Otomatis login ke TTLOCK API saat server start
 - **Lock History** — Cek riwayat pembukaan berdasarkan Lock ID
-- **All Lockboxes** — List semua lockbox dengan last open time
-- **Auto Refresh** — Data refresh otomatis setiap 5 menit (bisa pause/resume)
+- **All Lockboxes** — List semua lockbox dengan last open time (dari cache server, auto-refresh 5 menit)
 - **Sortable Table** — Sort semua kolom ascending/descending
 - **Gateway Info** — Info gateway (WiFi, status online, signal strength)
 - **Smart Pagination** — Pagination efisien untuk ribuan records
@@ -54,7 +55,7 @@ cd ttlock-dashboard
 
 # Setup env
 cd backend
-cp .env.example .env   # Isi credential TTLOCK
+cp .env.example .env   # Isi credential TTLock
 cd ..
 
 # Run
@@ -63,6 +64,21 @@ docker compose up -d
 # Buka browser
 # http://localhost:5757
 ```
+
+## Deployment Notes
+
+Dashboard ini bersifat **temporary** — gunakan hanya saat diperlukan.
+
+- Setelah selesai digunakan, **wajib menghentikan** service:
+  ```bash
+  # Docker
+  docker compose down
+
+  # Atau jika menjalankan manual
+  # Ctrl+C pada terminal backend
+  ```
+- Jika menggunakan **ngrok**, URL bersifat rotasi/temporer dan tidak boleh dibiarkan tetap aktif.
+- Credential di `backend/.env` bersifat rahasia — jangan commit atau bagikan publik.
 
 ## Environment Variables
 
@@ -79,7 +95,8 @@ PORT=5757
 | Endpoint | Method | Description |
 |---|---|---|
 | `/api/auth/status` | GET | Status autentikasi |
-| `/api/locks` | GET | List semua lockbox |
+| `/api/locks/enriched` | GET | List semua lockbox + last open (cached) |
+| `/api/locks` | GET | List semua lockbox (raw) |
 | `/api/locks/:lockId` | GET | Detail lockbox |
 | `/api/locks/:lockId/records` | GET | Riwayat pembukaan |
 | `/api/locks/:lockId/gateway` | GET | Info gateway lockbox |
@@ -89,11 +106,13 @@ PORT=5757
 
 ```
 TTLOCK/
+├── Dockerfile
+├── docker-compose.yml
+├── README.md
 ├── backend/
-│   ├── .env              # Credential (jangan di-commit!)
-│   ├── Dockerfile
 │   ├── package.json
 │   ├── tsconfig.json
+│   ├── .env.example
 │   └── src/
 │       ├── main.ts       # Express entry point
 │       ├── config.ts     # Load environment
@@ -105,8 +124,6 @@ TTLOCK/
 │   ├── index.html
 │   ├── style.css
 │   └── app.js
-├── docker-compose.yml
-└── README.md
 ```
 
 ## License

@@ -16,8 +16,17 @@ interface OAuthResponse {
   scope: string;
 }
 
+interface CacheEntry {
+  lastOpen: number | null;
+  expiresAt: number;
+}
+
+const CACHE_TTL_MS = 5 * 60 * 1000;
+const CONCURRENCY_LIMIT = 5;
+
 class TTLockService {
   private tokenData: TokenData | null = null;
+  private lastOpenCache = new Map<string, CacheEntry>();
 
   async initialize(): Promise<void> {
     console.log("[TTLock] Initializing - logging in...");
@@ -177,6 +186,64 @@ class TTLockService {
     return this.post<{ list: any[] }>("/v3/gateway/listByLock", {
       lockId,
     });
+  }
+
+  async getAllLockList(): Promise<any[]> {
+    const all: any[] = [];
+    let pageNo = 1;
+    while (true) {
+      const { list } = await this.post<{ list: any[] }>("/v3/lock/list", {
+        pageNo: String(pageNo),
+        pageSize: "100",
+      });
+      all.push(...list);
+      if (list.length < 100) break;
+      pageNo++;
+    }
+    return all;
+  }
+
+  private isCacheValid(entry: CacheEntry): boolean {
+    return Date.now() < entry.expiresAt;
+  }
+
+  async getEnrichedLocks(): Promise<{ list: any[] }> {
+    const allLocks = await this.getAllLockList();
+
+    const fetchLastOpen = async (lockId: string): Promise<number | null> => {
+      const cached = this.lastOpenCache.get(lockId);
+      if (cached && this.isCacheValid(cached)) return cached.lastOpen;
+      try {
+        const { list } = await this.post<{
+          list: any[];
+        }>("/v3/lockRecord/list", {
+          lockId,
+          pageNo: "1",
+          pageSize: "1",
+          startDate: "0",
+          endDate: "0",
+        });
+        const lastOpen = list?.length > 0 ? list[0].lockDate : null;
+        this.lastOpenCache.set(lockId, { lastOpen, expiresAt: Date.now() + CACHE_TTL_MS });
+        return lastOpen;
+      } catch {
+        return null;
+      }
+    };
+
+    const results: any[] = [];
+    for (let i = 0; i < allLocks.length; i += CONCURRENCY_LIMIT) {
+      const batch = allLocks.slice(i, i + CONCURRENCY_LIMIT);
+      const batchResults = await Promise.all(
+        batch.map(async (lock) => {
+          const lastOpen = await fetchLastOpen(lock.lockId);
+          return { ...lock, lastOpen };
+        }),
+      );
+      results.push(...batchResults);
+    }
+
+    return { list: results };
   }
 }
 
