@@ -33,104 +33,162 @@
   </header>
 
   <main>
-    <!-- Section 1: Lock History by ID -->
-    <section class="card" id="section-history">
-      <h2>Lock History by ID</h2>
-      <div class="search-bar">
-        <input type="text" id="lock-id-input" placeholder="Enter Lock ID (e.g. 35057430)" />
-        <button id="search-btn" onclick="searchLock()">Search</button>
-      </div>
+    <nav class="tab-nav" id="tab-nav">
+      <button class="tab-btn active" data-tab="locks">Lockboxes</button>
+      <button class="tab-btn" data-tab="gateways">Gateways</button>
+    </nav>
 
-      <div id="lock-detail" class="hidden">
-        <h3>Lock Info</h3>
-        <div class="lock-info-grid">
-          <div class="info-item">
-            <label>Name</label>
-            <span id="lock-name">-</span>
+    <!-- Tab: Lockboxes -->
+    <div class="tab-content" id="tab-locks">
+      <!-- Section 1: Lock History by ID -->
+      <section class="card" id="section-history">
+        <h2>Lock History by ID</h2>
+        <div class="search-bar">
+          <input type="text" id="lock-id-input" placeholder="Enter Lock ID (e.g. 35057430)" />
+          <button id="search-btn" onclick="searchLock()">Search</button>
+        </div>
+
+        <div id="lock-detail" class="hidden">
+          <h3>Lock Info</h3>
+          <div class="lock-info-grid">
+            <div class="info-item">
+              <label>Name</label>
+              <span id="lock-name">-</span>
+            </div>
+            <div class="info-item">
+              <label>Alias</label>
+              <span id="lock-alias">-</span>
+            </div>
+            <div class="info-item">
+              <label>Battery</label>
+              <span id="lock-battery">-</span>
+            </div>
+            <div class="info-item">
+              <label>MAC</label>
+              <span id="lock-mac">-</span>
+            </div>
+            <div class="info-item">
+              <label>Lock ID</label>
+              <span id="lock-id-display">-</span>
+            </div>
+            <div class="info-item">
+              <label>Model</label>
+              <span id="lock-model">-</span>
+            </div>
+            <div class="info-item">
+              <label>Firmware</label>
+              <span id="lock-firmware">-</span>
+            </div>
           </div>
-          <div class="info-item">
-            <label>Alias</label>
-            <span id="lock-alias">-</span>
-          </div>
-          <div class="info-item">
-            <label>Battery</label>
-            <span id="lock-battery">-</span>
-          </div>
-          <div class="info-item">
-            <label>MAC</label>
-            <span id="lock-mac">-</span>
-          </div>
-          <div class="info-item">
-            <label>Lock ID</label>
-            <span id="lock-id-display">-</span>
-          </div>
-          <div class="info-item">
-            <label>Model</label>
-            <span id="lock-model">-</span>
-          </div>
-          <div class="info-item">
-            <label>Firmware</label>
-            <span id="lock-firmware">-</span>
+
+          <div class="gateway-section">
+            <h4>Gateway</h4>
+            <div id="lock-gateway-info">-</div>
           </div>
         </div>
 
-        <div class="gateway-section">
-          <h4>Gateway</h4>
-          <div id="lock-gateway-info">-</div>
+        <div id="lock-records-section" class="hidden">
+          <h3>Unlock History <span id="records-total" class="records-total"></span></h3>
+          <div class="table-wrapper">
+            <table id="records-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Time</th>
+                  <th>Method</th>
+                  <th>Operator</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="records-body">
+              </tbody>
+            </table>
+          </div>
+          <div id="records-pagination" class="pagination"></div>
         </div>
-      </div>
+      </section>
 
-      <div id="lock-records-section" class="hidden">
-        <h3>Unlock History <span id="records-total" class="records-total"></span></h3>
+      <!-- Section 2: All Lockboxes -->
+      <section class="card" id="section-all-locks">
+        <div class="section-header">
+          <h2 id="locks-count">All Lockboxes</h2>
+          <div class="controls">
+            <button id="pause-btn" class="btn-pause" onclick="togglePause()">⏸ Pause</button>
+            <span id="countdown" class="countdown">Next refresh: 5:00</span>
+            <button class="btn-refresh" onclick="forceRefreshAll()">🔄 Refresh Now</button>
+          </div>
+        </div>
         <div class="table-wrapper">
-          <table id="records-table">
+          <table id="locks-table">
             <thead>
               <tr>
-                <th>#</th>
-                <th>Time</th>
-                <th>Method</th>
-                <th>Operator</th>
-                <th>Status</th>
+                <th class="sortable" onclick="sortLocks('lockId')">Lock ID<span class="sort-arrow" id="sort-lockId"></span></th>
+                <th class="sortable" onclick="sortLocks('lockName')">Name<span class="sort-arrow" id="sort-lockName"></span></th>
+                <th class="sortable" onclick="sortLocks('lockAlias')">Alias<span class="sort-arrow" id="sort-lockAlias"></span></th>
+                <th class="sortable" onclick="sortLocks('lastOpen')">Last Open<span class="sort-arrow" id="sort-lastOpen"></span></th>
+                <th class="sortable" onclick="sortLocks('electricQuantity')">Battery<span class="sort-arrow" id="sort-electricQuantity"></span></th>
+                <th class="sortable" onclick="sortLocks('hasGateway')">Gateway<span class="sort-arrow" id="sort-hasGateway"></span></th>
               </tr>
             </thead>
-            <tbody id="records-body">
+            <tbody id="locks-body">
             </tbody>
           </table>
         </div>
-        <div id="records-pagination" class="pagination"></div>
-      </div>
-    </section>
+        <div id="locks-loading" class="loading">Loading lockboxes...</div>
+      </section>
+    </div>
 
-    <!-- Section 2: All Lockboxes -->
-    <section class="card" id="section-all-locks">
-      <div class="section-header">
-        <h2 id="locks-count">All Lockboxes</h2>
-        <div class="controls">
-          <button id="pause-btn" class="btn-pause" onclick="togglePause()">⏸ Pause</button>
-          <span id="countdown" class="countdown">Next refresh: 5:00</span>
-          <button class="btn-refresh" onclick="forceRefreshAll()">🔄 Refresh Now</button>
+    <!-- Tab: Gateways -->
+    <div class="tab-content hidden" id="tab-gateways">
+      <section class="card" id="section-gateways">
+        <div class="section-header">
+          <h2 id="gateways-count">All Gateways</h2>
+          <div class="controls">
+            <button class="btn-refresh" onclick="loadGateways()">🔄 Refresh</button>
+          </div>
         </div>
-      </div>
-      <div class="table-wrapper">
-        <table id="locks-table">
-          <thead>
-            <tr>
-              <th class="sortable" onclick="sortLocks('lockId')">Lock ID<span class="sort-arrow" id="sort-lockId"></span></th>
-              <th class="sortable" onclick="sortLocks('lockName')">Name<span class="sort-arrow" id="sort-lockName"></span></th>
-              <th class="sortable" onclick="sortLocks('lockAlias')">Alias<span class="sort-arrow" id="sort-lockAlias"></span></th>
-              <th class="sortable" onclick="sortLocks('lastOpen')">Last Open<span class="sort-arrow" id="sort-lastOpen"></span></th>
-              <th class="sortable" onclick="sortLocks('electricQuantity')">Battery<span class="sort-arrow" id="sort-electricQuantity"></span></th>
-              <th class="sortable" onclick="sortLocks('hasGateway')">Gateway<span class="sort-arrow" id="sort-hasGateway"></span></th>
-            </tr>
-          </thead>
-          <tbody id="locks-body">
-          </tbody>
-        </table>
-      </div>
-      <div id="locks-loading" class="loading">Loading lockboxes...</div>
-    </section>
+        <div class="table-wrapper">
+          <table id="gateways-table">
+            <thead>
+              <tr>
+                <th class="sortable" onclick="sortGateways('gatewayId')">Gateway ID<span class="sort-arrow" id="sort-gw-gatewayId"></span></th>
+                <th class="sortable" onclick="sortGateways('gatewayMac')">MAC<span class="sort-arrow" id="sort-gw-gatewayMac"></span></th>
+                <th>WiFi</th>
+                <th class="sortable" onclick="sortGateways('lockNum')">Locks<span class="sort-arrow" id="sort-gw-lockNum"></span></th>
+                <th class="sortable" onclick="sortGateways('isOnline')">Status<span class="sort-arrow" id="sort-gw-isOnline"></span></th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="gateways-body">
+            </tbody>
+          </table>
+        </div>
+        <div id="gateways-loading" class="loading">Loading gateways...</div>
+      </section>
+    </div>
   </main>
 
+  <!-- Topology Overlay -->
+  <div class="topology-overlay hidden" id="topology-overlay">
+    <div class="topology-header">
+      <div class="topology-title">
+        <span id="topology-gateway-name">Gateway Topology</span>
+        <span class="topology-live-badge">● LIVE</span>
+      </div>
+      <div class="topology-controls">
+        <button class="topology-btn" onclick="resetTopologyLayout()">Reset Layout</button>
+        <button class="topology-btn topology-close" onclick="closeTopology()">✕ Close</button>
+      </div>
+    </div>
+    <canvas id="topology-canvas"></canvas>
+    <div class="topology-legend">
+      <span><span class="legend-dot legend-strong"></span> Strong (&gt;-75)</span>
+      <span><span class="legend-dot legend-medium"></span> Medium (-75~-85)</span>
+      <span><span class="legend-dot legend-weak"></span> Weak (&lt;-85)</span>
+    </div>
+  </div>
+
+  <script src="topology.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

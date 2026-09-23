@@ -1,6 +1,6 @@
 # TTLOCK Dashboard
 
-Web dashboard untuk **monitoring** smart lock TTLOCK (read-only). Menampilkan info lock, riwayat pembukaan, dan status semua lockbox dalam satu halaman.
+Web dashboard untuk **monitoring** smart lock TTLOCK (read-only). Menampilkan info lock, riwayat pembukaan, status semua lockbox, dan **topologi gateway** dalam satu halaman.
 
 > **Catatan:** Dashboard ini bersifat **ephemeral** — hanya dijalankan saat dibutuhkan, lalu dihentikan setelah selesai digunakan.
 
@@ -10,14 +10,15 @@ Web dashboard untuk **monitoring** smart lock TTLOCK (read-only). Menampilkan in
 - **Lock History** — Cek riwayat pembukaan berdasarkan Lock ID
 - **All Lockboxes** — List semua lockbox dengan last open time (dari cache server, auto-refresh 5 menit)
 - **Sortable Table** — Sort semua kolom ascending/descending
-- **Gateway Info** — Info gateway (WiFi, status online, signal strength)
+- **Gateway List** — List semua gateway dengan jumlah lockbox tersambung, status online/offline
+- **Gateway Topology** — Visual interaktif (canvas) gateway → lockbox, animasi garis, RSSI per koneksi, refresh 1 detik, drag/pan/zoom, posisi disimpan di localStorage
 - **Smart Pagination** — Pagination efisien untuk ribuan records
 - **Account Info** — Info akun dan status token di header
 
 ## Tech Stack
 
 - **Backend**: Express.js + TypeScript
-- **Frontend**: HTML + CSS + Vanilla JavaScript
+- **Frontend**: HTML + CSS + Vanilla JavaScript + Canvas API
 - **API**: TTLOCK Open Platform API v3
 
 ## Prerequisites
@@ -100,7 +101,8 @@ PORT=5757
 | `/api/locks/:lockId` | GET | Detail lockbox |
 | `/api/locks/:lockId/records` | GET | Riwayat pembukaan |
 | `/api/locks/:lockId/gateway` | GET | Info gateway lockbox |
-| `/api/gateways` | GET | List semua gateway |
+| `/api/gateways` | GET | List semua gateway (paginated) |
+| `/api/gateways/:gatewayId/topology` | GET | Topologi gateway + lockbox (cached 5s, single-flight) |
 
 ## Project Structure
 
@@ -121,9 +123,10 @@ TTLOCK/
 │       └── routes/
 │           └── ttlock.routes.ts
 ├── frontend/
-│   ├── index.html
-│   ├── style.css
-│   └── app.js
+│   ├── index.html        # Tab nav + sections + topology overlay
+│   ├── style.css         # Styling + topology overlay
+│   ├── app.js            # Main logic + gateway table
+│   └── topology.js       # Canvas topology renderer
 ```
 
 ## License

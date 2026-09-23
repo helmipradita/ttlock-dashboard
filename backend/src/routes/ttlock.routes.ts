@@ -85,7 +85,17 @@ router.get("/locks/:lockId/gateway", async (req: Request, res: Response) => {
 
 router.get("/gateways", async (_req: Request, res: Response) => {
   try {
-    const data = await ttlockService.getGatewayList();
+    const list = await ttlockService.getAllGatewayList();
+    res.json({ list });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get("/gateways/:gatewayId/topology", async (req: Request, res: Response) => {
+  try {
+    const gatewayId = String(req.params.gatewayId);
+    const data = await ttlockService.getGatewayTopology(gatewayId);
     res.json(data);
   } catch (err: any) {
     res.status(500).json({ error: err.message });

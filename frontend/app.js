@@ -8,6 +8,10 @@ let sortDir = "asc";
 let enrichedLocks = [];
 let isPaused = false;
 
+let allGateways = [];
+let gwSortKey = null;
+let gwSortDir = "asc";
+
 const LOCK_RECORD_TYPES = {
   1: "App", 2: "Parking Lock", 3: "Gateway", 4: "Passcode",
   5: "Parking Lock Raise", 6: "Parking Lock Lower", 7: "IC Card",
@@ -66,6 +70,19 @@ async function apiFetch(path) {
   return res.json();
 }
 
+// ── Tab Navigation ──
+function initTabs() {
+  document.querySelectorAll(".tab-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".tab-content").forEach(c => c.classList.add("hidden"));
+      btn.classList.add("active");
+      document.getElementById(`tab-${btn.dataset.tab}`).classList.remove("hidden");
+    });
+  });
+}
+
+// ── Auth ──
 async function loadAuthStatus() {
   try {
     const data = await apiFetch("/api/auth/status");
@@ -89,6 +106,7 @@ async function loadAuthStatus() {
   }
 }
 
+// ── Lock Search ──
 async function searchLock(page) {
   const input = document.getElementById("lock-id-input");
   const lockId = input.value.trim();
@@ -155,6 +173,7 @@ function renderLockDetail(d, gatewayData) {
   }
 }
 
+// ── Lock Records ──
 function renderRecords(data) {
   const section = document.getElementById("lock-records-section");
   section.classList.remove("hidden");
@@ -195,7 +214,6 @@ function renderPagination(totalPages, currentPage) {
   el.innerHTML = "";
   if (totalPages <= 1) return;
 
-  // Prev button
   const prevBtn = document.createElement("button");
   prevBtn.textContent = "‹ Prev";
   prevBtn.disabled = currentPage <= 1;
@@ -214,17 +232,14 @@ function renderPagination(totalPages, currentPage) {
     const pages = new Set();
     pages.add(1);
     pages.add(2);
-
     for (let p = Math.max(3, currentPage - 1); p <= Math.min(totalPages - 2, currentPage + 1); p++) {
       pages.add(p);
     }
-
     pages.add(totalPages - 1);
     pages.add(totalPages);
 
     const sorted = [...pages].sort((a, b) => a - b);
     let prev = 0;
-
     sorted.forEach(p => {
       if (prev && p - prev > 1) {
         const dots = document.createElement("span");
@@ -232,7 +247,6 @@ function renderPagination(totalPages, currentPage) {
         dots.className = "pagination-dots";
         el.appendChild(dots);
       }
-
       const btn = document.createElement("button");
       btn.textContent = p;
       if (p === currentPage) btn.className = "active";
@@ -242,7 +256,6 @@ function renderPagination(totalPages, currentPage) {
     });
   }
 
-  // Next button
   const nextBtn = document.createElement("button");
   nextBtn.textContent = "Next ›";
   nextBtn.disabled = currentPage >= totalPages;
@@ -250,6 +263,7 @@ function renderPagination(totalPages, currentPage) {
   el.appendChild(nextBtn);
 }
 
+// ── All Lockboxes ──
 let allLocksData = [];
 
 async function loadAllLocks() {
@@ -363,6 +377,7 @@ function renderAllLocks() {
   });
 }
 
+// ── Lockboxes Refresh ──
 function togglePause() {
   isPaused = !isPaused;
   const btn = document.getElementById("pause-btn");
@@ -386,16 +401,13 @@ function forceRefreshAll() {
 
 function startCountdown() {
   if (countdownInterval) clearInterval(countdownInterval);
-
   countdownSeconds = 300;
   updateCountdownDisplay();
 
   countdownInterval = setInterval(() => {
     if (isPaused) return;
-
     countdownSeconds--;
     updateCountdownDisplay();
-
     if (countdownSeconds <= 0) {
       countdownSeconds = 300;
       loadAllLocks();
@@ -410,12 +422,126 @@ function updateCountdownDisplay() {
     `Next refresh: ${min}:${sec.toString().padStart(2, "0")}`;
 }
 
+// ── Gateways ──
+async function loadGateways() {
+  const loadingEl = document.getElementById("gateways-loading");
+  const tbody = document.getElementById("gateways-body");
+  loadingEl.classList.remove("hidden");
+  tbody.innerHTML = "";
+
+  try {
+    const data = await apiFetch("/api/gateways");
+    allGateways = data.list || [];
+    document.getElementById("gateways-count").textContent = `All Gateways (${allGateways.length})`;
+    renderGateways();
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#ef4444;">Error: ${err.message}</td></tr>`;
+  } finally {
+    loadingEl.classList.add("hidden");
+  }
+}
+
+function sortGateways(key) {
+  if (gwSortKey === key) {
+    gwSortDir = gwSortDir === "asc" ? "desc" : "asc";
+  } else {
+    gwSortKey = key;
+    gwSortDir = "asc";
+  }
+
+  allGateways.sort((a, b) => {
+    let valA, valB;
+    switch (key) {
+      case "gatewayId":
+        valA = a.gatewayId || 0;
+        valB = b.gatewayId || 0;
+        return gwSortDir === "asc" ? valA - valB : valB - valA;
+      case "gatewayMac":
+        valA = (a.gatewayMac || "").toLowerCase();
+        valB = (b.gatewayMac || "").toLowerCase();
+        break;
+      case "lockNum":
+        valA = a.lockNum || 0;
+        valB = b.lockNum || 0;
+        return gwSortDir === "asc" ? valA - valB : valB - valA;
+      case "isOnline":
+        valA = a.isOnline || 0;
+        valB = b.isOnline || 0;
+        return gwSortDir === "asc" ? valA - valB : valB - valA;
+      default:
+        return 0;
+    }
+    if (valA < valB) return gwSortDir === "asc" ? -1 : 1;
+    if (valA > valB) return gwSortDir === "asc" ? 1 : -1;
+    return 0;
+  });
+
+  renderGateways();
+  ["gatewayId", "gatewayMac", "lockNum", "isOnline"].forEach(k => {
+    const el = document.getElementById(`sort-gw-${k}`);
+    if (el) el.textContent = gwSortKey === k ? (gwSortDir === "asc" ? " ▲" : " ▼") : "";
+  });
+}
+
+function renderGateways() {
+  const tbody = document.getElementById("gateways-body");
+  tbody.innerHTML = "";
+
+  if (allGateways.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#9ca3af;">No gateways found</td></tr>';
+    return;
+  }
+
+  allGateways.forEach(gw => {
+    const tr = document.createElement("tr");
+    const onlineBadge = gw.isOnline === 1
+      ? '<span class="badge badge-success">Online</span>'
+      : gw.isOnline === 0
+        ? '<span class="badge badge-fail">Offline</span>'
+        : '<span class="badge">Unknown</span>';
+    const version = gw.gatewayVersion === 1 ? "G1" : gw.gatewayVersion === 2 ? "G2" : `-`;
+
+    tr.innerHTML = `
+      <td><strong>${gw.gatewayId}</strong></td>
+      <td>${gw.gatewayMac || "-"}</td>
+      <td>${gw.networkName || "-"}</td>
+      <td>${gw.lockNum ?? 0}</td>
+      <td>${onlineBadge}</td>
+      <td>
+        <button class="btn-topology" onclick="openTopology(${gw.gatewayId}, '${gw.networkName || gw.gatewayId}', ${gw.lockNum || 0})">
+          Topology (${gw.lockNum || 0})
+        </button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ── Topology ──
+async function openTopology(gatewayId, gatewayName, lockNum) {
+  const overlay = document.getElementById("topology-overlay");
+  overlay.classList.remove("hidden");
+  document.getElementById("topology-gateway-name").textContent = `${gatewayName} — ${lockNum} locks`;
+  startTopology(gatewayId);
+}
+
+function closeTopology() {
+  document.getElementById("topology-overlay").classList.add("hidden");
+  stopTopology();
+}
+
+function resetTopologyLayout() {
+  resetTopologyPositions();
+}
+
+// ── Init ──
 document.getElementById("lock-id-input").addEventListener("keydown", (e) => {
   if (e.key === "Enter") searchLock(1);
 });
 
 (async function init() {
+  initTabs();
   await loadAuthStatus();
-  await loadAllLocks();
+  await Promise.all([loadAllLocks(), loadGateways()]);
   startCountdown();
 })();
