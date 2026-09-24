@@ -32,14 +32,14 @@ docker compose up -d --build             # both
 - **`frontend/` folder deleted** — legacy vanilla JS, no longer exists
 - Default sort: lockboxes by hasGateway desc + lastOpen desc; gateways by isOnline desc
 - RSSI colors: >-75 Strong (green), -85..-75 Medium (amber), <-85 Weak (red)
-- Backend cache: topology TTL 5s single-flight; frontend polls 1s
+- Backend cache: topology TTL 5s single-flight; lastOpen cache 5s (skipped with `?bypassCache=true`)
 
 ## API Endpoints
 
 | Endpoint | Method | Description |
 |---|---|---|
 | `/api/auth/status` | GET | Auth status |
-| `/api/locks/enriched` | GET | All locks + last open (cached) |
+| `/api/locks/enriched` | GET | All locks + last open (5s cache, bypass with `?bypassCache=true`) |
 | `/api/locks` | GET | All locks (raw) |
 | `/api/locks/:lockId` | GET | Lock detail |
 | `/api/locks/:lockId/records` | GET | Unlock history |
