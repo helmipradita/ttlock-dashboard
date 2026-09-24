@@ -35,6 +35,22 @@ const GW_COLOR = "#6366f1";
 const LOCK_COLOR = "#334155";
 const BG = "#0f172a";
 
+export type TopologyData = {
+  gateway: {
+    gatewayId: number;
+    gatewayMac?: string;
+    networkName?: string;
+    isOnline?: number;
+    rssi?: number | null;
+  };
+  locks: {
+    lockId: number;
+    lockName?: string;
+    lockAlias?: string;
+    rssi?: number | null;
+  }[];
+};
+
 export function rssiColor(rssi: number | null | undefined): string {
   if (rssi == null) return "#475569";
   if (rssi > -75) return "#4ade80";
@@ -96,7 +112,7 @@ export function createTopologyState(): TopoState {
 export function applyTopologyData(
   s: TopoState,
   gatewayId: number,
-  data: { gateway: { gatewayId: number; gatewayMac?: string; networkName?: string; isOnline?: number; rssi?: number | null }; locks: { lockId: number; lockName?: string; lockAlias?: string; rssi?: number | null }[] }
+  data: TopologyData
 ): void {
   const gw = data.gateway;
   const gwId = `gw_${gw.gatewayId}`;
@@ -385,6 +401,15 @@ function onWheel(s: TopoState, e: WheelEvent, canvas: HTMLCanvasElement) {
 
 // ── Public API ──
 
+function fitCanvas(canvas: HTMLCanvasElement) {
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  const w = Math.max(rect.width, 1);
+  const h = Math.max(rect.height, 1);
+  canvas.width = Math.round(w * dpr);
+  canvas.height = Math.round(h * dpr);
+}
+
 export function initCanvas(
   canvas: HTMLCanvasElement,
   gatewayId: number
@@ -392,15 +417,13 @@ export function initCanvas(
   destroy: () => void;
   resetLayout: () => void;
   getState: () => TopoState;
+  applyData: (data: TopologyData) => void;
 } {
   const ctx = canvas.getContext("2d")!;
-  const dpr = window.devicePixelRatio || 1;
-  const rect = canvas.getBoundingClientRect();
-  canvas.width = rect.width * dpr;
-  canvas.height = rect.height * dpr;
-  ctx.scale(dpr, dpr);
+  fitCanvas(canvas);
 
   const state = createTopologyState();
+  const dpr = window.devicePixelRatio || 1;
   state.pan = { x: canvas.width / dpr / 2, y: canvas.height / dpr / 2 };
 
   let animFrame: number;
@@ -422,29 +445,27 @@ export function initCanvas(
     canvas.style.cursor = "grab";
   };
   const handleWheel = (e: WheelEvent) => onWheel(state, e, canvas);
-  const handleResize = () => {
-    const r = canvas.getBoundingClientRect();
-    const newDpr = window.devicePixelRatio || 1;
-    canvas.width = r.width * newDpr;
-    canvas.height = r.height * newDpr;
-  };
 
   canvas.addEventListener("mousedown", handleMouseDown);
   canvas.addEventListener("mousemove", handleMouseMove);
   canvas.addEventListener("mouseup", handleMouseUp);
   canvas.addEventListener("mouseleave", handleMouseUp);
   canvas.addEventListener("wheel", handleWheel, { passive: false });
-  window.addEventListener("resize", handleResize);
+
+  const ro = new ResizeObserver(() => {
+    fitCanvas(canvas);
+  });
+  ro.observe(canvas);
 
   return {
     destroy() {
       cancelAnimationFrame(animFrame);
+      ro.disconnect();
       canvas.removeEventListener("mousedown", handleMouseDown);
       canvas.removeEventListener("mousemove", handleMouseMove);
       canvas.removeEventListener("mouseup", handleMouseUp);
       canvas.removeEventListener("mouseleave", handleMouseUp);
       canvas.removeEventListener("wheel", handleWheel);
-      window.removeEventListener("resize", handleResize);
     },
     resetLayout() {
       localStorage.removeItem(`topo_pos_${gatewayId}`);
@@ -453,6 +474,9 @@ export function initCanvas(
     },
     getState() {
       return state;
+    },
+    applyData(data: TopologyData) {
+      applyTopologyData(state, gatewayId, data);
     },
   };
 }
