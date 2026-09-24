@@ -22,8 +22,8 @@ interface Props {
 }
 
 export function GatewaysSection({ onOpenTopology }: Props) {
-  const [sortKey, setSortKey] = useState<SortKey>("gatewayId");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [sortKey, setSortKey] = useState<SortKey>("isOnline");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
   const query = useQuery({
     queryKey: ["gateways"],
@@ -36,7 +36,9 @@ export function GatewaysSection({ onOpenTopology }: Props) {
     copy.sort((a, b) => {
       const va = (a[sortKey] ?? 0) as number;
       const vb = (b[sortKey] ?? 0) as number;
-      return sortDir === "asc" ? va - vb : vb - va;
+      const cmp = sortDir === "asc" ? va - vb : vb - va;
+      if (cmp !== 0) return cmp;
+      return a.gatewayId - b.gatewayId;
     });
     return copy;
   }, [query.data, sortKey, sortDir]);

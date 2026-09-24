@@ -29,8 +29,8 @@ interface Props {
 }
 
 export function AllLockboxesSection({ onLockSelect }: Props) {
-  const [sortKey, setSortKey] = useState<SortKey>("lockId");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [paused, setPaused] = useState(false);
 
   const query = useQuery({
@@ -50,6 +50,14 @@ export function AllLockboxesSection({ onLockSelect }: Props) {
   const sorted = useMemo(() => {
     const list = query.data?.list ?? [];
     const copy = [...list];
+    if (!sortKey) {
+      copy.sort((a, b) => {
+        const g = (b.hasGateway ?? 0) - (a.hasGateway ?? 0);
+        if (g !== 0) return g;
+        return (b.lastOpen ?? 0) - (a.lastOpen ?? 0);
+      });
+      return copy;
+    }
     copy.sort((a, b) => {
       let va: number | string;
       let vb: number | string;
@@ -98,6 +106,11 @@ export function AllLockboxesSection({ onLockSelect }: Props) {
         {sortKey === field && (
           <span className="text-primary text-xs ml-1">
             {sortDir === "asc" ? "▲" : "▼"}
+          </span>
+        )}
+        {sortKey === null && (field === "hasGateway" || field === "lastOpen") && (
+          <span className="text-muted-foreground text-xs ml-1">
+            {field === "hasGateway" ? "▲" : "▼"}
           </span>
         )}
       </th>
