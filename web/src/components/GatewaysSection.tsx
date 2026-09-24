@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getGateways } from "@/api/client";
 import type { GatewayInfo, GatewayLock } from "@/api/types";
@@ -23,18 +23,19 @@ import {
   Unplug,
 } from "lucide-react";
 import { StatusBadge, SignalDot } from "@/components/status";
+import { InlineTopology } from "@/components/InlineTopology";
 
 type SortKey = "gatewayId" | "gatewayMac" | "lockNum" | "isOnline";
 
 interface Props {
-  onOpenTopology: (id: number, name: string, lockNum: number) => void;
   onOpenLock: (lockId: number) => void;
 }
 
-export function GatewaysSection({ onOpenTopology, onOpenLock }: Props) {
+export function GatewaysSection({ onOpenLock }: Props) {
   const [sortKey, setSortKey] = useState<SortKey>("isOnline");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [showTopologyFor, setShowTopologyFor] = useState<number | null>(null);
 
   const query = useQuery({
     queryKey: ["gateways"],
@@ -117,13 +118,18 @@ export function GatewaysSection({ onOpenTopology, onOpenLock }: Props) {
           <TableBody>
             {sorted.map((gw: GatewayInfo) => {
               const isExpanded = expandedId === gw.gatewayId;
+              const isTopologyVisible = showTopologyFor === gw.gatewayId;
               return (
-                <>
+                <Fragment key={gw.gatewayId}>
                   <TableRow
-                    key={gw.gatewayId}
                     data-state={isExpanded ? "expanded" : undefined}
                     className={`cursor-pointer ${isExpanded ? "bg-muted/50" : ""}`}
-                    onClick={() => setExpandedId((prev) => (prev === gw.gatewayId ? null : gw.gatewayId))}
+                    onClick={() => {
+                      setExpandedId((prev) => (prev === gw.gatewayId ? null : gw.gatewayId));
+                      if (expandedId === gw.gatewayId) {
+                        setShowTopologyFor((prev) => (prev === gw.gatewayId ? null : prev));
+                      }
+                    }}
                   >
                     <TableCell className="w-8 px-2">
                       {isExpanded ? (
@@ -160,12 +166,17 @@ export function GatewaysSection({ onOpenTopology, onOpenLock }: Props) {
                     </TableCell>
                     <TableCell className="w-28 text-right">
                       <Button
-                        variant="outline"
+                        variant={isTopologyVisible ? "secondary" : "outline"}
                         size="sm"
                         className="h-7 gap-1.5"
                         onClick={(e) => {
                           e.stopPropagation();
-                          onOpenTopology(gw.gatewayId, gw.networkName || String(gw.gatewayId), gw.lockNum ?? 0);
+                          if (isTopologyVisible) {
+                            setShowTopologyFor(null);
+                          } else {
+                            setExpandedId(gw.gatewayId);
+                            setShowTopologyFor(gw.gatewayId);
+                          }
                         }}
                       >
                         <Network className="w-3.5 h-3.5" />
@@ -246,11 +257,20 @@ export function GatewaysSection({ onOpenTopology, onOpenLock }: Props) {
                               </TableBody>
                             </Table>
                           )}
+
+                          {isTopologyVisible && (
+                            <InlineTopology
+                              gatewayId={gw.gatewayId}
+                              gatewayName={gw.networkName || String(gw.gatewayId)}
+                              lockNum={gw.lockNum ?? 0}
+                              onClose={() => setShowTopologyFor(null)}
+                            />
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
                   )}
-                </>
+                </Fragment>
               );
             })}
           </TableBody>

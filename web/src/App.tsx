@@ -4,14 +4,7 @@ import { AppHeader } from "@/components/layout/AppHeader";
 import { LockHistorySection } from "@/components/LockHistorySection";
 import { AllLockboxesSection } from "@/components/AllLockboxesSection";
 import { GatewaysSection } from "@/components/GatewaysSection";
-import { TopologyOverlay } from "@/components/TopologyOverlay";
 import { Lock, Network } from "lucide-react";
-
-interface TopologyTarget {
-  id: number;
-  name: string;
-  lockNum: number;
-}
 
 interface LockSelect {
   id: number;
@@ -19,7 +12,6 @@ interface LockSelect {
 }
 
 export default function App() {
-  const [topologyTarget, setTopologyTarget] = useState<TopologyTarget | null>(null);
   const [lockSelect, setLockSelect] = useState<LockSelect | null>(null);
   const [tab, setTab] = useState("locks");
 
@@ -61,25 +53,10 @@ export default function App() {
           </TabsContent>
 
           <TabsContent value="gateways" className="mt-4">
-            <GatewaysSection
-              onOpenTopology={(id, name, lockNum) =>
-                setTopologyTarget({ id, name, lockNum })
-              }
-              onOpenLock={handleOpenLock}
-            />
+            <GatewaysSection onOpenLock={handleOpenLock} />
           </TabsContent>
         </Tabs>
       </main>
-
-      {topologyTarget && (
-        <TopologyOverlay
-          gatewayId={topologyTarget.id}
-          gatewayName={topologyTarget.name}
-          lockNum={topologyTarget.lockNum}
-          open
-          onClose={() => setTopologyTarget(null)}
-        />
-      )}
     </div>
   );
 }
