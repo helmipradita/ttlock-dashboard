@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { unlockLock } from "@/api/client";
@@ -14,11 +15,15 @@ interface Props {
 export function UnlockTerminal({ lockId, lockName, open, onClose }: Props) {
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState<UnlockResponse[]>([]);
+  const queryClient = useQueryClient();
 
   async function doUnlock() {
     setLoading(true);
     const res = await unlockLock(lockId);
     setHistory((h) => [...h, res]);
+    if (res.ok) {
+      queryClient.invalidateQueries({ queryKey: ["locks"] });
+    }
     setLoading(false);
   }
 

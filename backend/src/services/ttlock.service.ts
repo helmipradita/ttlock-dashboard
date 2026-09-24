@@ -16,17 +16,11 @@ interface OAuthResponse {
   scope: string;
 }
 
-interface CacheEntry {
-  lastOpen: number | null;
-  expiresAt: number;
-}
-
 interface TopologyCacheEntry {
   data: any;
   expiresAt: number;
 }
 
-const CACHE_TTL_MS = 5 * 60 * 1000;
 const TOPOLOGY_CACHE_TTL_MS = 5 * 1000;
 const CONCURRENCY_LIMIT = 5;
 
@@ -71,7 +65,6 @@ export const TTLOCK_ERROR_CODES: Record<number, string> = {
 
 class TTLockService {
   private tokenData: TokenData | null = null;
-  private lastOpenCache = new Map<string, CacheEntry>();
   private topologyCache = new Map<string, TopologyCacheEntry>();
   private topologyInflight = new Map<string, Promise<any>>();
 
@@ -265,18 +258,14 @@ class TTLockService {
     return all;
   }
 
-  private isCacheValid(entry: CacheEntry): boolean {
+  private isCacheValid(entry: TopologyCacheEntry): boolean {
     return Date.now() < entry.expiresAt;
   }
 
-  async getEnrichedLocks(bypassCache = false): Promise<{ list: any[] }> {
+  async getEnrichedLocks(): Promise<{ list: any[] }> {
     const allLocks = await this.getAllLockList();
 
     const fetchLastOpen = async (lockId: string): Promise<number | null> => {
-      if (!bypassCache) {
-        const cached = this.lastOpenCache.get(lockId);
-        if (cached && this.isCacheValid(cached)) return cached.lastOpen;
-      }
       try {
         const { list } = await this.post<{
           list: any[];
@@ -287,11 +276,7 @@ class TTLockService {
           startDate: "0",
           endDate: "0",
         });
-        const lastOpen = list?.length > 0 ? list[0].lockDate : null;
-        if (!bypassCache) {
-          this.lastOpenCache.set(lockId, { lastOpen, expiresAt: Date.now() + CACHE_TTL_MS });
-        }
-        return lastOpen;
+        return list?.length > 0 ? list[0].lockDate : null;
       } catch {
         return null;
       }
