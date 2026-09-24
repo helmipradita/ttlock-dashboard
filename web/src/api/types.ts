@@ -54,3 +54,13 @@ export interface TopologyResponse {
   gateway: GatewayInfo & { rssi: number | null };
   locks: GatewayLock[];
 }
+
+export interface UnlockResponse {
+  ok: boolean;
+  errcode: number;
+  errmsg: string;
+  description: string | null;
+  human: string;
+  lockId: number;
+  ts: string;
+}

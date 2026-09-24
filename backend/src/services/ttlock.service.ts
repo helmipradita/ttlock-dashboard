@@ -30,6 +30,45 @@ const CACHE_TTL_MS = 5 * 60 * 1000;
 const TOPOLOGY_CACHE_TTL_MS = 5 * 1000;
 const CONCURRENCY_LIMIT = 5;
 
+export const TTLOCK_ERROR_CODES: Record<number, string> = {
+  0: "Success",
+  1: "Failed",
+  [-3]: "Invalid Parameter",
+  [-2012]: "Lock not connected to any Gateway",
+  [-2018]: "Permission Denied",
+  [-4043]: "Remote unlock not enabled (enable in TTLOCK app lock settings)",
+  [-4056]: "Run out of memory (storage full)",
+  10000: "Invalid client_id",
+  10001: "Invalid client (client_id or client_secret wrong)",
+  10002: "Invalid code",
+  10003: "Invalid token",
+  10004: "Invalid grant (token expired/revoked)",
+  10005: "Invalid grant_scope",
+  10006: "Invalid username (unapproved app)",
+  10007: "Invalid account (username/password wrong)",
+  10008: "Invalid redirect_uri",
+  10009: "Unsupported response_type",
+  10010: "Unsupported grant_type",
+  10011: "Invalid refresh_token",
+  20001: "Not lock user",
+  20002: "Not lock admin",
+  20003: "Invalid key",
+  20004: "Key not exists",
+  20005: "Backup key password error",
+  20006: "Receiver not exists",
+  20007: "Invalid keyboardPwdVersion",
+  20008: "Invalid lock name",
+  30001: "No permission (API)",
+  30002: "Invalid registered username",
+  30003: "User already exists",
+  30004: "Invalid userid to delete",
+  30005: "Not custom app user",
+  30006: "Exceeds API call number limit",
+  80000: "Date must be current time (±5 min)",
+  80002: "Invalid JSON format",
+  90000: "Internal server error",
+};
+
 class TTLockService {
   private tokenData: TokenData | null = null;
   private lastOpenCache = new Map<string, CacheEntry>();
@@ -267,6 +306,37 @@ class TTLockService {
     }
 
     return { list: results };
+  }
+
+  async unlockLock(lockId: string) {
+    const ts = new Date().toISOString();
+    try {
+      const raw = await this.post<{
+        errcode: number;
+        errmsg: string;
+        description?: string;
+      }>("/v3/lock/unlock", { lockId });
+
+      return {
+        ok: raw.errcode === 0,
+        errcode: raw.errcode,
+        errmsg: raw.errmsg,
+        description: raw.description || null,
+        human: TTLOCK_ERROR_CODES[raw.errcode] || raw.errmsg,
+        lockId: Number(lockId),
+        ts,
+      };
+    } catch (err: any) {
+      return {
+        ok: false,
+        errcode: -1,
+        errmsg: err.message || "Network or server error",
+        description: null,
+        human: "Failed to reach TTLock API",
+        lockId: Number(lockId),
+        ts,
+      };
+    }
   }
 
   async getGatewayTopology(gatewayId: string): Promise<any> {

@@ -12,12 +12,18 @@ interface TopologyTarget {
   lockNum: number;
 }
 
+interface LockSelect {
+  id: number;
+  n: number;
+}
+
 export default function App() {
   const [topologyTarget, setTopologyTarget] = useState<TopologyTarget | null>(null);
+  const [lockSelect, setLockSelect] = useState<LockSelect | null>(null);
 
   function handleLockSelect(lockId: number) {
+    setLockSelect((s) => ({ id: lockId, n: (s?.n ?? 0) + 1 }));
     document.getElementById("lock-search")?.scrollIntoView({ behavior: "smooth" });
-    void lockId;
   }
 
   return (
@@ -31,7 +37,7 @@ export default function App() {
           </TabsList>
 
           <TabsContent value="locks" className="space-y-6 mt-4">
-            <LockHistorySection />
+            <LockHistorySection lockSelect={lockSelect} />
             <AllLockboxesSection onLockSelect={handleLockSelect} />
           </TabsContent>
 

@@ -83,6 +83,21 @@ router.get("/locks/:lockId/gateway", async (req: Request, res: Response) => {
   }
 });
 
+router.post("/locks/:lockId/unlock", async (req: Request, res: Response) => {
+  try {
+    const lockId = String(req.params.lockId);
+    const result = await ttlockService.unlockLock(lockId);
+    res.json(result);
+  } catch (err: any) {
+    res.status(502).json({
+      ok: false,
+      errcode: -1,
+      errmsg: err.message,
+      human: "Failed to reach TTLock API",
+    });
+  }
+});
+
 router.get("/gateways", async (_req: Request, res: Response) => {
   try {
     const list = await ttlockService.getAllGatewayList();

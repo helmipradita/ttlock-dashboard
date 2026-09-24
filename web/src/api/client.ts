@@ -4,6 +4,7 @@ import type {
   LockRecordsResponse,
   GatewayInfo,
   TopologyResponse,
+  UnlockResponse,
 } from "./types";
 
 async function apiFetch<T>(path: string): Promise<T> {
@@ -42,4 +43,33 @@ export function getGateways() {
 
 export function getTopology(gatewayId: number) {
   return apiFetch<TopologyResponse>(`/api/gateways/${gatewayId}/topology`);
+}
+
+export async function unlockLock(lockId: number): Promise<UnlockResponse> {
+  try {
+    const res = await fetch(`/api/locks/${lockId}/unlock`, { method: "POST" });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      return {
+        ok: false,
+        errcode: body.errcode ?? -1,
+        errmsg: body.errmsg ?? `HTTP ${res.status}`,
+        description: body.description ?? null,
+        human: body.human ?? "Server error",
+        lockId,
+        ts: new Date().toISOString(),
+      };
+    }
+    return res.json();
+  } catch (err: any) {
+    return {
+      ok: false,
+      errcode: -1,
+      errmsg: err.message || "Network error",
+      description: null,
+      human: "Failed to reach server",
+      lockId,
+      ts: new Date().toISOString(),
+    };
+  }
 }

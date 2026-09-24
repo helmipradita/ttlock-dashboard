@@ -15,6 +15,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCountdown } from "@/hooks/useCountdown";
 import { relativeTime, batteryLevel } from "@/lib/format";
+import { UnlockTerminal } from "@/components/UnlockTerminal";
 
 type SortKey =
   | "lockId"
@@ -32,6 +33,7 @@ export function AllLockboxesSection({ onLockSelect }: Props) {
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [paused, setPaused] = useState(false);
+  const [unlockTarget, setUnlockTarget] = useState<{ id: number; name: string } | null>(null);
 
   const query = useQuery({
     queryKey: ["locks"],
@@ -164,6 +166,7 @@ export function AllLockboxesSection({ onLockSelect }: Props) {
               <SortHeader field="lastOpen">Last Open</SortHeader>
               <SortHeader field="electricQuantity">Battery</SortHeader>
               <SortHeader field="hasGateway">Gateway</SortHeader>
+              <th className="text-left px-3 py-2 font-semibold text-sm">Action</th>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -191,6 +194,22 @@ export function AllLockboxesSection({ onLockSelect }: Props) {
                       {lock.hasGateway === 1 ? "Yes" : "No"}
                     </Badge>
                   </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 px-2 text-xs font-mono"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setUnlockTarget({
+                          id: lock.lockId,
+                          name: lock.lockAlias || lock.lockName || String(lock.lockId),
+                        });
+                      }}
+                    >
+                      🔓 Unlock
+                    </Button>
+                  </TableCell>
                 </TableRow>
               );
             })}
@@ -211,6 +230,15 @@ export function AllLockboxesSection({ onLockSelect }: Props) {
           </p>
         )}
       </CardContent>
+
+      {unlockTarget && (
+        <UnlockTerminal
+          lockId={unlockTarget.id}
+          lockName={unlockTarget.name}
+          open
+          onClose={() => setUnlockTarget(null)}
+        />
+      )}
     </Card>
   );
 }

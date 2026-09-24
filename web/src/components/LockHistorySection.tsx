@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getLock, getLockRecords, getLockGateway } from "@/api/client";
 import type { LockRecord } from "@/api/types";
@@ -22,10 +22,22 @@ import {
   LOCK_RECORD_TYPES,
 } from "@/lib/format";
 
-export function LockHistorySection() {
+interface Props {
+  lockSelect?: { id: number; n: number } | null;
+}
+
+export function LockHistorySection({ lockSelect }: Props) {
   const [searchId, setSearchId] = useState("");
   const [activeId, setActiveId] = useState("");
   const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    if (!lockSelect) return;
+    const id = String(lockSelect.id);
+    setSearchId(id);
+    setActiveId(id);
+    setPage(1);
+  }, [lockSelect?.n]);
 
   const lockQuery = useQuery({
     queryKey: ["lock", activeId],
@@ -66,6 +78,7 @@ export function LockHistorySection() {
       <CardContent className="space-y-4">
         <div className="flex gap-2">
           <Input
+            id="lock-search"
             placeholder="Enter Lock ID (e.g. 35057430)"
             value={searchId}
             onChange={(e) => setSearchId(e.target.value)}
