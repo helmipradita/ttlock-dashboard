@@ -3,19 +3,25 @@ import { useQuery } from "@tanstack/react-query";
 import { getEnrichedLocks } from "@/api/client";
 import type { Lock } from "@/api/types";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCountdown } from "@/hooks/useCountdown";
 import { relativeTime, batteryLevel } from "@/lib/format";
 import { UnlockTerminal } from "@/components/UnlockTerminal";
+import {
+  Lock as LockIcon,
+  Pause,
+  Play,
+  RefreshCw,
+  ChevronRight,
+  BatteryLow,
+  BatteryMedium,
+  BatteryFull,
+  BatteryWarning,
+  Wifi,
+  WifiOff,
+} from "lucide-react";
+import { StatusBadge } from "@/components/status";
 
 type SortKey =
   | "lockId"
@@ -28,6 +34,13 @@ type SortKey =
 interface Props {
   onLockSelect: (lockId: number) => void;
   selectedLockId?: number | null;
+}
+
+function BatteryIcon({ level }: { level: number | null | undefined }) {
+  if (level == null) return <BatteryWarning className="w-4 h-4 text-muted-foreground" />;
+  if (level <= 20) return <BatteryLow className="w-4 h-4 text-red-500" />;
+  if (level <= 50) return <BatteryMedium className="w-4 h-4 text-amber-500" />;
+  return <BatteryFull className="w-4 h-4 text-green-500" />;
 }
 
 export function AllLockboxesSection({ onLockSelect, selectedLockId }: Props) {
@@ -102,20 +115,22 @@ export function AllLockboxesSection({ onLockSelect, selectedLockId }: Props) {
   function SortHeader({ field, children }: { field: SortKey; children: React.ReactNode }) {
     return (
       <th
-        className="text-left px-3 py-2 font-semibold text-sm cursor-pointer select-none hover:bg-muted/80 transition-colors"
+        className="text-left px-3 py-2.5 font-semibold text-xs uppercase tracking-wider text-muted-foreground cursor-pointer select-none hover:text-foreground transition-colors"
         onClick={() => toggleSort(field)}
       >
-        {children}
-        {sortKey === field && (
-          <span className="text-primary text-xs ml-1">
-            {sortDir === "asc" ? "▲" : "▼"}
-          </span>
-        )}
-        {sortKey === null && (field === "hasGateway" || field === "lastOpen") && (
-          <span className="text-muted-foreground text-xs ml-1">
-            {field === "hasGateway" ? "▲" : "▼"}
-          </span>
-        )}
+        <span className="inline-flex items-center gap-1">
+          {children}
+          {sortKey === field && (
+            <span className="text-primary text-[10px]">
+              {sortDir === "asc" ? "↑" : "↓"}
+            </span>
+          )}
+          {sortKey === null && (field === "hasGateway" || field === "lastOpen") && (
+            <span className="text-muted-foreground/50 text-[10px]">
+              {field === "hasGateway" ? "↑" : "↓"}
+            </span>
+          )}
+        </span>
       </th>
     );
   }
@@ -124,120 +139,142 @@ export function AllLockboxesSection({ onLockSelect, selectedLockId }: Props) {
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between flex-wrap gap-2">
-          <CardTitle>
-            All Lockboxes ({sorted.length} locks)
-          </CardTitle>
+          <CardTitle>All Lockboxes ({sorted.length})</CardTitle>
           <div className="flex items-center gap-3 text-sm">
             <Button
               variant="outline"
               size="sm"
+              className="gap-1.5"
               onClick={() => setPaused((p) => !p)}
             >
-              {paused ? "▶ Resume" : "⏸ Pause"}
+              {paused ? <Play className="w-3 h-3" /> : <Pause className="w-3 h-3" />}
+              {paused ? "Resume" : "Pause"}
             </Button>
-            <span className="text-muted-foreground tabular-nums">
+            <span className="text-muted-foreground tabular-nums text-xs">
               {paused ? "Paused" : `Next refresh: ${countdown.display}`}
             </span>
             <Button
               variant="outline"
               size="sm"
+              className="gap-1.5"
               onClick={() => {
                 setPaused(false);
                 countdown.reset();
                 query.refetch();
               }}
             >
-              🔄 Refresh Now
+              <RefreshCw className="w-3 h-3" />
+              Refresh
             </Button>
           </div>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-0">
         {query.isError && (
-          <p className="text-sm text-red-500">
+          <p className="px-4 py-3 text-sm text-red-500">
             Error: {(query.error as Error).message}
           </p>
         )}
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <SortHeader field="lockId">Lock ID</SortHeader>
-              <SortHeader field="lockName">Name</SortHeader>
-              <SortHeader field="lockAlias">Alias</SortHeader>
-              <SortHeader field="lastOpen">Last Open</SortHeader>
-              <SortHeader field="electricQuantity">Battery</SortHeader>
-              <SortHeader field="hasGateway">Gateway</SortHeader>
-              <th className="text-left px-3 py-2 font-semibold text-sm">Action</th>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {sorted.map((lock: Lock) => {
-              const bat = batteryLevel(lock.electricQuantity);
-              return (
-                <TableRow
-                  key={lock.lockId}
-                  className={`cursor-pointer transition-colors ${
-                    selectedLockId === lock.lockId
-                      ? "bg-primary/10 border-l-2 border-l-primary"
-                      : "hover:bg-muted/50"
-                  }`}
-                  onClick={() => onLockSelect(lock.lockId)}
-                >
-                  <TableCell className="font-semibold">
-                    {selectedLockId === lock.lockId && (
-                      <span className="text-primary mr-1.5 text-xs">▸</span>
-                    )}
-                    {lock.lockId}
-                  </TableCell>
-                  <TableCell>{lock.lockName || "-"}</TableCell>
-                  <TableCell>{lock.lockAlias || "-"}</TableCell>
-                  <TableCell>{relativeTime(lock.lastOpen)}</TableCell>
-                  <TableCell>
-                    <span className={bat.color}>
-                      {bat.icon} {bat.label}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={lock.hasGateway === 1 ? "default" : "secondary"}
-                    >
-                      {lock.hasGateway === 1 ? "Yes" : "No"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-7 px-2 text-xs font-mono"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setUnlockTarget({
-                          id: lock.lockId,
-                          name: lock.lockAlias || lock.lockName || String(lock.lockId),
-                        });
-                      }}
-                    >
-                      🔓 Unlock
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
+
+        {/* Header */}
+        <div className="grid grid-cols-[auto_minmax(0,1fr)_minmax(0,1fr)_auto_auto_auto_auto] items-center px-4 py-2.5 border-b bg-muted/30 text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+          <span className="w-6" />
+          <SortHeader field="lockId">Lock ID</SortHeader>
+          <SortHeader field="lockName">Name</SortHeader>
+          <span className="text-left px-3">Alias</span>
+          <SortHeader field="lastOpen">Last Open</SortHeader>
+          <SortHeader field="electricQuantity">Battery</SortHeader>
+          <SortHeader field="hasGateway">Gateway</SortHeader>
+          <span className="px-3 text-right">Action</span>
+        </div>
+
+        {/* Rows */}
+        <div className="divide-y">
+          {sorted.map((lock: Lock) => {
+            const bat = batteryLevel(lock.electricQuantity);
+            const isSelected = selectedLockId === lock.lockId;
+            return (
+              <div
+                key={lock.lockId}
+                className={`grid grid-cols-[auto_minmax(0,1fr)_minmax(0,1fr)_auto_auto_auto_auto] items-center px-4 py-3 cursor-pointer transition-colors group ${
+                  isSelected
+                    ? "bg-primary/5 border-l-2 border-l-primary"
+                    : "hover:bg-muted/30 border-l-2 border-l-transparent"
+                }`}
+                onClick={() => onLockSelect(lock.lockId)}
+              >
+                {/* Chevron */}
+                <div className="w-6 flex items-center justify-center">
+                  {isSelected && (
+                    <ChevronRight className="w-3.5 h-3.5 text-primary" />
+                  )}
+                </div>
+
+                {/* Lock ID */}
+                <div className="font-mono font-semibold text-sm">{lock.lockId}</div>
+
+                {/* Name */}
+                <div className="text-sm truncate">{lock.lockName || "-"}</div>
+
+                {/* Alias */}
+                <div className="text-sm text-muted-foreground truncate px-3">{lock.lockAlias || "-"}</div>
+
+                {/* Last Open */}
+                <div className="text-xs text-muted-foreground whitespace-nowrap">
+                  {relativeTime(lock.lastOpen)}
+                </div>
+
+                {/* Battery */}
+                <div className="flex items-center gap-1.5 px-3">
+                  <BatteryIcon level={lock.electricQuantity} />
+                  <span className={`text-xs font-medium ${bat.color}`}>{bat.label}</span>
+                </div>
+
+                {/* Gateway */}
+                <div className="px-3">
+                  {lock.hasGateway === 1 ? (
+                    <StatusBadge variant="online" label="Yes" size="xs" icon={Wifi} />
+                  ) : (
+                    <StatusBadge variant="offline" label="No" size="xs" icon={WifiOff} />
+                  )}
+                </div>
+
+                {/* Action */}
+                <div className="px-3 flex justify-end">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 gap-1.5"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setUnlockTarget({
+                        id: lock.lockId,
+                        name: lock.lockAlias || lock.lockName || String(lock.lockId),
+                      });
+                    }}
+                  >
+                    <LockIcon className="w-3.5 h-3.5" />
+                    Unlock
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
 
         {query.isFetching && (
-          <div className="space-y-2 mt-4">
+          <div className="px-4 space-y-2 py-4">
             {Array.from({ length: 5 }).map((_, i) => (
-              <Skeleton key={i} className="h-10 w-full" />
+              <Skeleton key={i} className="h-12 w-full rounded-lg" />
             ))}
           </div>
         )}
 
         {!query.isFetching && sorted.length === 0 && (
-          <p className="text-sm text-muted-foreground text-center py-8">
-            No lockboxes found
-          </p>
+          <div className="flex flex-col items-center gap-2 py-12 text-muted-foreground">
+            <LockIcon className="w-5 h-5" />
+            <p className="text-sm">No lockboxes found</p>
+          </div>
         )}
       </CardContent>
 

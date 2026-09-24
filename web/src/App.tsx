@@ -5,6 +5,7 @@ import { LockHistorySection } from "@/components/LockHistorySection";
 import { AllLockboxesSection } from "@/components/AllLockboxesSection";
 import { GatewaysSection } from "@/components/GatewaysSection";
 import { TopologyOverlay } from "@/components/TopologyOverlay";
+import { Lock, Network } from "lucide-react";
 
 interface TopologyTarget {
   id: number;
@@ -41,8 +42,14 @@ export default function App() {
       <main className="max-w-5xl mx-auto px-6 py-6 space-y-6">
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList>
-            <TabsTrigger value="locks">Lockboxes</TabsTrigger>
-            <TabsTrigger value="gateways">Gateways</TabsTrigger>
+            <TabsTrigger value="locks" className="gap-1.5">
+              <Lock className="w-4 h-4" />
+              Lockboxes
+            </TabsTrigger>
+            <TabsTrigger value="gateways" className="gap-1.5">
+              <Network className="w-4 h-4" />
+              Gateways
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="locks" className="space-y-6 mt-4">
