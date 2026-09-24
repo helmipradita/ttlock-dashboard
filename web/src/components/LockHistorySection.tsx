@@ -21,6 +21,7 @@ import {
   rssiInfo,
   LOCK_RECORD_TYPES,
 } from "@/lib/format";
+import { UnlockTerminal } from "@/components/UnlockTerminal";
 
 interface Props {
   lockSelect?: { id: number; n: number } | null;
@@ -30,6 +31,7 @@ export function LockHistorySection({ lockSelect }: Props) {
   const [searchId, setSearchId] = useState("");
   const [activeId, setActiveId] = useState("");
   const [page, setPage] = useState(1);
+  const [unlockOpen, setUnlockOpen] = useState(false);
 
   useEffect(() => {
     if (!lockSelect) return;
@@ -98,7 +100,17 @@ export function LockHistorySection({ lockSelect }: Props) {
         {lock && (
           <div className="space-y-3">
             <div>
-              <h4 className="text-sm font-semibold mb-2">Lock Info</h4>
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-sm font-semibold">Lock Info</h4>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 px-2.5 text-xs font-mono"
+                  onClick={() => setUnlockOpen(true)}
+                >
+                  🔓 Unlock
+                </Button>
+              </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-muted/50 rounded-lg p-4 text-sm">
                 <InfoItem label="Name" value={lock.lockName} />
                 <InfoItem label="Alias" value={lock.lockAlias} />
@@ -272,6 +284,15 @@ export function LockHistorySection({ lockSelect }: Props) {
           </div>
         )}
       </CardContent>
+
+      {lock && (
+        <UnlockTerminal
+          lockId={lock.lockId}
+          lockName={lock.lockAlias || lock.lockName || String(lock.lockId)}
+          open={unlockOpen}
+          onClose={() => setUnlockOpen(false)}
+        />
+      )}
     </Card>
   );
 }

@@ -27,9 +27,10 @@ type SortKey =
 
 interface Props {
   onLockSelect: (lockId: number) => void;
+  selectedLockId?: number | null;
 }
 
-export function AllLockboxesSection({ onLockSelect }: Props) {
+export function AllLockboxesSection({ onLockSelect, selectedLockId }: Props) {
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [paused, setPaused] = useState(false);
@@ -175,10 +176,19 @@ export function AllLockboxesSection({ onLockSelect }: Props) {
               return (
                 <TableRow
                   key={lock.lockId}
-                  className="cursor-pointer hover:bg-muted/50"
+                  className={`cursor-pointer transition-colors ${
+                    selectedLockId === lock.lockId
+                      ? "bg-primary/10 border-l-2 border-l-primary"
+                      : "hover:bg-muted/50"
+                  }`}
                   onClick={() => onLockSelect(lock.lockId)}
                 >
-                  <TableCell className="font-semibold">{lock.lockId}</TableCell>
+                  <TableCell className="font-semibold">
+                    {selectedLockId === lock.lockId && (
+                      <span className="text-primary mr-1.5 text-xs">▸</span>
+                    )}
+                    {lock.lockId}
+                  </TableCell>
                   <TableCell>{lock.lockName || "-"}</TableCell>
                   <TableCell>{lock.lockAlias || "-"}</TableCell>
                   <TableCell>{relativeTime(lock.lastOpen)}</TableCell>

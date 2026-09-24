@@ -20,17 +20,26 @@ interface LockSelect {
 export default function App() {
   const [topologyTarget, setTopologyTarget] = useState<TopologyTarget | null>(null);
   const [lockSelect, setLockSelect] = useState<LockSelect | null>(null);
+  const [tab, setTab] = useState("locks");
 
   function handleLockSelect(lockId: number) {
     setLockSelect((s) => ({ id: lockId, n: (s?.n ?? 0) + 1 }));
     document.getElementById("lock-search")?.scrollIntoView({ behavior: "smooth" });
   }
 
+  function handleOpenLock(lockId: number) {
+    setLockSelect((s) => ({ id: lockId, n: (s?.n ?? 0) + 1 }));
+    setTab("locks");
+    setTimeout(() => {
+      document.getElementById("lock-search")?.scrollIntoView({ behavior: "smooth" });
+    }, 100);
+  }
+
   return (
     <div className="min-h-screen bg-muted/30">
       <AppHeader />
       <main className="max-w-5xl mx-auto px-6 py-6 space-y-6">
-        <Tabs defaultValue="locks">
+        <Tabs value={tab} onValueChange={setTab}>
           <TabsList>
             <TabsTrigger value="locks">Lockboxes</TabsTrigger>
             <TabsTrigger value="gateways">Gateways</TabsTrigger>
@@ -38,7 +47,10 @@ export default function App() {
 
           <TabsContent value="locks" className="space-y-6 mt-4">
             <LockHistorySection lockSelect={lockSelect} />
-            <AllLockboxesSection onLockSelect={handleLockSelect} />
+            <AllLockboxesSection
+              onLockSelect={handleLockSelect}
+              selectedLockId={lockSelect?.id ?? null}
+            />
           </TabsContent>
 
           <TabsContent value="gateways" className="mt-4">
@@ -46,6 +58,7 @@ export default function App() {
               onOpenTopology={(id, name, lockNum) =>
                 setTopologyTarget({ id, name, lockNum })
               }
+              onOpenLock={handleOpenLock}
             />
           </TabsContent>
         </Tabs>
