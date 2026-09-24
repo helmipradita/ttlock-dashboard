@@ -9,7 +9,7 @@ Web dashboard untuk **monitoring** smart lock TTLOCK (read-only). Menampilkan in
 - **Auto Login** — Otomatis login ke TTLOCK API saat server start
 - **Lock History** — Cek riwayat pembukaan berdasarkan Lock ID
 - **All Lockboxes** — List semua lockbox dengan last open time (auto-refresh 5 menit)
-- **Sortable Table** — Sort semua kolom ascending/descending
+- **Sortable Table** — Default smart sort: lockbox by gateway-first + last open terbaru, gateways by online-first. Klik header kolom untuk ubah sort
 - **Gateway List** — List semua gateway dengan jumlah lockbox tersambung, status online/offline
 - **Gateway Topology** — Visual interaktif (canvas) gateway → lockbox, animasi garis, RSSI per koneksi, refresh 1 detik, drag/pan/zoom, posisi disimpan di localStorage
 - **Smart Pagination** — Pagination efisien untuk ribuan records
@@ -70,6 +70,22 @@ docker compose up -d --build
 - `web-nginx` — nginx serve static React build + reverse proxy `/api/*` → backend (port 5757)
 - `backend` — Express API server (listen port 5000 internal, tidak expose ke host)
 
+**Resource limits (per service):**
+- `backend`: 2 CPU / 512 MB RAM limit, 0.5 CPU / 256 MB RAM reserve
+- `web-nginx`: 1 CPU / 256 MB RAM limit, 0.25 CPU / 128 MB RAM reserve
+
+**Rebuild per-service (hemat waktu saat cuma satu bagian yang berubah):**
+```bash
+# Hanya frontend berubah
+docker compose up -d --build web-nginx
+
+# Hanya backend berubah
+docker compose up -d --build backend
+
+# Keduanya berubah
+docker compose up -d --build
+```
+
 ## Deployment Notes
 
 Dashboard ini bersifat **temporary** — gunakan hanya saat diperlukan.
@@ -124,7 +140,6 @@ TTLOCK/
 │       │   └── ttlock.service.ts
 │       └── routes/
 │           └── ttlock.routes.ts
-├── frontend/                # Legacy vanilla JS (unused in Docker)
 ├── web/                     # React + Vite + shadcn/ui
 │   ├── vite.config.ts
 │   ├── components.json

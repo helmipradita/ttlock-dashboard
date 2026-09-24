@@ -1,32 +1,39 @@
-# React + TypeScript + Vite
+# TTLOCK Dashboard — Frontend (React)
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+React + TypeScript + Vite + shadcn/ui + TanStack Query + Tailwind CSS.
 
-Currently, two official plugins are available:
+## Development
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Buka `http://localhost:5173`. Proxy `/api` → backend di `:5757`.
+
+## Build
+
+```bash
+npm run build
+```
+
+Output ke `dist/`, di-serve oleh nginx di Docker (`Dockerfile.web`).
+
+## Tech
+
+- **Vite 5.4** — bundler
+- **React 19** + TypeScript
+- **shadcn/ui** (base-ui) — komponen UI
+- **TanStack Query** — data fetching + caching
+- **Tailwind CSS 4** — styling
+
+## Struktur
+
+```
+src/
+├── api/          # API client + types
+├── components/   # React components
+├── hooks/        # Custom hooks (useCountdown)
+├── lib/          # Utilities
+└── topology/     # Canvas-based gateway topology renderer
+```
