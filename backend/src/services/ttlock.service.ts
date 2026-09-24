@@ -269,12 +269,14 @@ class TTLockService {
     return Date.now() < entry.expiresAt;
   }
 
-  async getEnrichedLocks(): Promise<{ list: any[] }> {
+  async getEnrichedLocks(bypassCache = false): Promise<{ list: any[] }> {
     const allLocks = await this.getAllLockList();
 
     const fetchLastOpen = async (lockId: string): Promise<number | null> => {
-      const cached = this.lastOpenCache.get(lockId);
-      if (cached && this.isCacheValid(cached)) return cached.lastOpen;
+      if (!bypassCache) {
+        const cached = this.lastOpenCache.get(lockId);
+        if (cached && this.isCacheValid(cached)) return cached.lastOpen;
+      }
       try {
         const { list } = await this.post<{
           list: any[];
@@ -286,7 +288,9 @@ class TTLockService {
           endDate: "0",
         });
         const lastOpen = list?.length > 0 ? list[0].lockDate : null;
-        this.lastOpenCache.set(lockId, { lastOpen, expiresAt: Date.now() + CACHE_TTL_MS });
+        if (!bypassCache) {
+          this.lastOpenCache.set(lockId, { lastOpen, expiresAt: Date.now() + CACHE_TTL_MS });
+        }
         return lastOpen;
       } catch {
         return null;

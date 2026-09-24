@@ -56,18 +56,19 @@ export function AllLockboxesSection({ onLockSelect, selectedLockId }: Props) {
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [paused, setPaused] = useState(false);
   const [unlockTarget, setUnlockTarget] = useState<{ id: number; name: string } | null>(null);
+  const [refreshCount, setRefreshCount] = useState(0);
 
   const query = useQuery({
-    queryKey: ["locks"],
-    queryFn: getEnrichedLocks,
+    queryKey: ["locks", refreshCount],
+    queryFn: () => getEnrichedLocks(refreshCount > 0),
     refetchInterval: paused ? false : 300_000,
   });
 
   const countdown = useCountdown(
     300,
     useCallback(() => {
-      query.refetch();
-    }, [query]),
+      setRefreshCount((c) => c + 1);
+    }, []),
     !paused
   );
 
@@ -153,7 +154,11 @@ export function AllLockboxesSection({ onLockSelect, selectedLockId }: Props) {
               variant="outline"
               size="sm"
               className="gap-1.5"
-              onClick={() => { setPaused(false); countdown.reset(); query.refetch(); }}
+              onClick={() => {
+                setPaused(false);
+                countdown.reset();
+                setRefreshCount((c) => c + 1);
+              }}
             >
               <RefreshCw className="w-3 h-3" />
               Refresh

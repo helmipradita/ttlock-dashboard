@@ -17,8 +17,10 @@ export function getAuthStatus() {
   return apiFetch<AuthStatus>("/api/auth/status");
 }
 
-export function getEnrichedLocks() {
-  return apiFetch<{ list: Lock[]; total: number }>("/api/locks/enriched");
+export function getEnrichedLocks(bypassCache = false) {
+  return apiFetch<{ list: Lock[]; total: number }>(
+    `/api/locks/enriched${bypassCache ? "?bypassCache=true" : ""}`
+  );
 }
 
 export function getLock(lockId: string) {

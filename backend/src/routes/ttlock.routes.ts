@@ -12,9 +12,10 @@ router.get("/auth/status", (_req: Request, res: Response) => {
   }
 });
 
-router.get("/locks/enriched", async (_req: Request, res: Response) => {
+router.get("/locks/enriched", async (req: Request, res: Response) => {
   try {
-    const data = await ttlockService.getEnrichedLocks();
+    const bypassCache = req.query.bypassCache === "true";
+    const data = await ttlockService.getEnrichedLocks(bypassCache);
     res.json(data);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
