@@ -14,10 +14,8 @@ interface Props {
 export function UnlockTerminal({ lockId, lockName, open, onClose }: Props) {
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState<UnlockResponse[]>([]);
-  const [pendingConfirm, setPendingConfirm] = useState(true);
 
   async function doUnlock() {
-    setPendingConfirm(true);
     setLoading(true);
     const res = await unlockLock(lockId);
     setHistory((h) => [...h, res]);
@@ -26,7 +24,6 @@ export function UnlockTerminal({ lockId, lockName, open, onClose }: Props) {
 
   function handleClose() {
     setHistory([]);
-    setPendingConfirm(true);
     onClose();
   }
 
@@ -78,18 +75,16 @@ export function UnlockTerminal({ lockId, lockName, open, onClose }: Props) {
 
           {history.length === 0 && !loading && (
             <div className="text-muted-foreground/60 py-2">
-              {pendingConfirm
-                ? "Click confirm below to send unlock command to gateway."
-                : "Waiting..."}
+              Click confirm below to send unlock command to gateway.
             </div>
           )}
         </div>
 
         {/* Footer */}
         <div className="flex gap-2 pt-2 border-t border-green-900/30">
-          {pendingConfirm && !loading && history.length === 0 ? (
+          {history.length === 0 && !loading ? (
             <Button
-              onClick={() => setPendingConfirm(false)}
+              onClick={doUnlock}
               className="bg-green-900/40 hover:bg-green-900/70 text-green-300 border border-green-700/50 font-mono"
             >
               ⚠ Confirm Unlock
