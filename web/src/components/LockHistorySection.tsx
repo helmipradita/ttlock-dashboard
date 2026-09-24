@@ -13,6 +13,14 @@ import {
 } from "@/lib/format";
 import { UnlockTerminal } from "@/components/UnlockTerminal";
 import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from "@/components/ui/table";
+import {
   Search,
   Lock as LockIcon,
   BatteryLow,
@@ -215,39 +223,36 @@ export function LockHistorySection({ lockSelect }: Props) {
                     ({records.total} records)
                   </span>
                 </h4>
-                <div className="rounded-lg border overflow-hidden">
-                  {/* Table header */}
-                  <div className="grid grid-cols-[auto_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] items-center px-3 py-2 bg-muted/30 text-xs uppercase tracking-wider text-muted-foreground font-semibold border-b">
-                    <span className="w-10 text-center">#</span>
-                    <span>Time</span>
-                    <span>Method</span>
-                    <span>Operator</span>
-                    <span className="w-20 text-right">Status</span>
-                  </div>
-                  {/* Rows */}
-                  <div className="divide-y">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/30">
+                      <TableHead className="w-12 text-center text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">#</TableHead>
+                      <TableHead className="whitespace-nowrap text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">Time</TableHead>
+                      <TableHead className="whitespace-nowrap text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">Method</TableHead>
+                      <TableHead className="whitespace-nowrap text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">Operator</TableHead>
+                      <TableHead className="w-24 text-right text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {records.list.map((r: LockRecord, i: number) => (
-                      <div
-                        key={r.recordId}
-                        className="grid grid-cols-[auto_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] items-center px-3 py-2.5 text-sm hover:bg-muted/30 transition-colors"
-                      >
-                        <span className="w-10 text-center text-xs text-muted-foreground">
+                      <TableRow key={r.recordId}>
+                        <TableCell className="w-12 text-center text-xs text-muted-foreground">
                           {(records.pageNo - 1) * records.pageSize + i + 1}
-                        </span>
-                        <span className="text-xs whitespace-nowrap">{formatDate(r.lockDate)}</span>
-                        <span className="text-xs">{LOCK_RECORD_TYPES[r.recordType] || `Type ${r.recordType}`}</span>
-                        <span className="text-xs truncate">{r.username || "-"}</span>
-                        <div className="w-20 flex justify-end">
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap text-xs">{formatDate(r.lockDate)}</TableCell>
+                        <TableCell className="text-xs">{LOCK_RECORD_TYPES[r.recordType] || `Type ${r.recordType}`}</TableCell>
+                        <TableCell className="truncate max-w-[160px] text-xs">{r.username || "-"}</TableCell>
+                        <TableCell className="w-24 text-right">
                           {r.success === 1 ? (
                             <StatusBadge variant="success" label="Success" size="xs" />
                           ) : (
                             <StatusBadge variant="failed" label="Failed" size="xs" />
                           )}
-                        </div>
-                      </div>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </div>
-                </div>
+                  </TableBody>
+                </Table>
 
                 {records.pages > 1 && (
                   <div className="flex gap-1 justify-center flex-wrap mt-3">
