@@ -4,7 +4,7 @@ import { getTopology } from "@/api/client";
 import type { TopologyData } from "@/topology/topology-canvas";
 import { initCanvas } from "@/topology/topology-canvas";
 import { Button } from "@/components/ui/button";
-import { X, RotateCcw, Network, Unplug } from "lucide-react";
+import { X, RotateCcw, Network, Unplug, WifiHigh, Wifi, WifiLow } from "lucide-react";
 
 interface Props {
   gatewayId: number;
@@ -149,15 +149,15 @@ export function InlineTopology({
       {/* Legend */}
       <div className="flex gap-4 px-4 py-1.5 bg-gray-800/80 border-t border-gray-700 text-[10px] text-gray-400">
         <span className="inline-flex items-center gap-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
+          <WifiHigh className="w-3 h-3 text-green-400" />
           Strong (&gt;-75)
         </span>
         <span className="inline-flex items-center gap-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+          <Wifi className="w-3 h-3 text-amber-400" />
           Medium (-75~-85)
         </span>
         <span className="inline-flex items-center gap-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
+          <WifiLow className="w-3 h-3 text-red-400" />
           Weak (&lt;-85)
         </span>
       </div>

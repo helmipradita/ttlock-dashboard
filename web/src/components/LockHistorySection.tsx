@@ -27,11 +27,10 @@ import {
   BatteryMedium,
   BatteryFull,
   BatteryWarning,
-  Wifi,
   WifiOff,
   History,
 } from "lucide-react";
-import { StatusBadge, SignalDot } from "@/components/status";
+import { StatusBadge, SignalDot, wifiIconForRssi } from "@/components/status";
 
 interface Props {
   lockSelect?: { id: number; n: number } | null;
@@ -143,7 +142,7 @@ export function LockHistorySection({ lockSelect }: Props) {
                   variant={lock.hasGateway === 1 ? "online" : "offline"}
                   label={lock.hasGateway === 1 ? "With Gateway" : "No Gateway"}
                   size="xs"
-                  icon={lock.hasGateway === 1 ? Wifi : WifiOff}
+                  icon={lock.hasGateway === 1 ? wifiIconForRssi(gw?.rssi).Icon : WifiOff}
                 />
                 <Button
                   variant="outline"

@@ -1,4 +1,5 @@
 import type { LucideIcon } from "lucide-react";
+import { WifiHigh, Wifi, WifiLow, WifiZero, WifiOff } from "lucide-react";
 
 type StatusVariant = "online" | "offline" | "success" | "failed" | "warning" | "default";
 
@@ -38,21 +39,42 @@ export function StatusBadge({
   );
 }
 
+export function wifiIconForRssi(rssi: number | null | undefined): {
+  Icon: LucideIcon;
+  color: string;
+} {
+  if (rssi == null) return { Icon: WifiZero, color: "text-muted-foreground" };
+  if (rssi > -75) return { Icon: WifiHigh, color: "text-green-500" };
+  if (rssi > -85) return { Icon: Wifi, color: "text-amber-500" };
+  return { Icon: WifiLow, color: "text-red-500" };
+}
+
+export function wifiIconForOnline(isOnline: number | null | undefined): {
+  Icon: LucideIcon;
+  color: string;
+} {
+  if (isOnline === 1) return { Icon: WifiHigh, color: "text-green-500" };
+  if (isOnline === 0) return { Icon: WifiOff, color: "text-muted-foreground" };
+  return { Icon: WifiZero, color: "text-muted-foreground" };
+}
+
 export function SignalDot({ rssi, size = "sm" }: { rssi: number | null; size?: "xs" | "sm" }) {
   if (rssi == null) {
-    return <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">— dB</span>;
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+        <WifiZero className={size === "xs" ? "w-3 h-3" : "w-3.5 h-3.5"} />
+        — dB
+      </span>
+    );
   }
-  const color = rssi > -75
-    ? "bg-green-500 shadow-[0_0_5px_rgba(34,197,94,0.5)]"
-    : rssi > -85
-      ? "bg-amber-500 shadow-[0_0_5px_rgba(245,158,11,0.5)]"
-      : "bg-red-500 shadow-[0_0_5px_rgba(239,68,68,0.5)]";
+
+  const { Icon, color } = wifiIconForRssi(rssi);
   const label = rssi > -75 ? "Strong" : rssi > -85 ? "Medium" : "Weak";
-  const dotSize = size === "xs" ? "w-1.5 h-1.5" : "w-2 h-2";
+  const iconSize = size === "xs" ? "w-3 h-3" : "w-3.5 h-3.5";
 
   return (
     <span className="inline-flex items-center gap-1.5 text-xs text-foreground/80">
-      <span className={`${dotSize} rounded-full ${color} shrink-0`} />
+      <Icon className={`${iconSize} ${color} shrink-0`} />
       <span>{rssi}</span>
       <span className="text-muted-foreground">dB</span>
       <span className="text-muted-foreground/60 hidden sm:inline">{label}</span>

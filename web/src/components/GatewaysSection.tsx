@@ -18,11 +18,10 @@ import {
   ChevronDown,
   Network,
   Eye,
-  Wifi,
   WifiOff,
   Unplug,
 } from "lucide-react";
-import { StatusBadge, SignalDot } from "@/components/status";
+import { StatusBadge, SignalDot, wifiIconForOnline } from "@/components/status";
 import { InlineTopology } from "@/components/InlineTopology";
 
 type SortKey = "gatewayId" | "gatewayMac" | "lockNum" | "isOnline";
@@ -143,7 +142,7 @@ export function GatewaysSection({ onOpenLock }: Props) {
                     <TableCell className="whitespace-nowrap">
                       {gw.networkName ? (
                         <span className="inline-flex items-center gap-1.5 text-sm">
-                          <Wifi className="w-3 h-3 text-muted-foreground shrink-0" />
+                          {(() => { const w = wifiIconForOnline(gw.isOnline); return <w.Icon className={`w-3.5 h-3.5 ${w.color} shrink-0`} />; })()}
                           {gw.networkName}
                         </span>
                       ) : (
