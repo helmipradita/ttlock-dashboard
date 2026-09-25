@@ -24,7 +24,7 @@ import {
 import { StatusBadge, SignalDot, wifiIconForOnline } from "@/components/status";
 import { InlineTopology } from "@/components/InlineTopology";
 
-type SortKey = "gatewayId" | "gatewayMac" | "lockNum" | "isOnline";
+type SortKey = "gatewayId" | "gatewayMac" | "networkName" | "lockNum" | "isOnline";
 
 interface Props {
   onOpenLock: (lockId: number) => void;
@@ -55,9 +55,16 @@ export function GatewaysSection({ onOpenLock }: Props) {
     const list = query.data?.list ?? [];
     const copy = [...list];
     copy.sort((a, b) => {
-      const va = (a[sortKey] ?? 0) as number;
-      const vb = (b[sortKey] ?? 0) as number;
-      const cmp = sortDir === "asc" ? va - vb : vb - va;
+      let cmp: number;
+      if (sortKey === "networkName") {
+        const va = (a.networkName ?? "") as string;
+        const vb = (b.networkName ?? "") as string;
+        cmp = sortDir === "asc" ? va.localeCompare(vb) : vb.localeCompare(va);
+      } else {
+        const va = (a[sortKey] ?? 0) as number;
+        const vb = (b[sortKey] ?? 0) as number;
+        cmp = sortDir === "asc" ? va - vb : vb - va;
+      }
       if (cmp !== 0) return cmp;
       return a.gatewayId - b.gatewayId;
     });
@@ -108,7 +115,7 @@ export function GatewaysSection({ onOpenLock }: Props) {
               <TableHead className="w-8" />
               <SortHeader field="gatewayId">Gateway ID</SortHeader>
               <SortHeader field="gatewayMac">MAC</SortHeader>
-              <TableHead className="whitespace-nowrap text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">WiFi</TableHead>
+              <SortHeader field="networkName">WiFi</SortHeader>
               <SortHeader field="lockNum">Locks</SortHeader>
               <SortHeader field="isOnline">Status</SortHeader>
               <TableHead className="w-28 text-right text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">Actions</TableHead>
@@ -236,7 +243,7 @@ export function GatewaysSection({ onOpenLock }: Props) {
                                     onClick={(e) => { e.stopPropagation(); onOpenLock(lock.lockId); }}
                                   >
                                     <TableCell className="font-mono text-xs font-medium">{lock.lockId}</TableCell>
-                                    <TableCell className="truncate max-w-[180px]">{lock.lockName || lock.lockAlias || "-"}</TableCell>
+                                    <TableCell className="truncate max-w-[180px]">{lock.lockAlias || lock.lockName || "-"}</TableCell>
                                     <TableCell>
                                       <SignalDot rssi={lock.rssi} size="xs" />
                                     </TableCell>

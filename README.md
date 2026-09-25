@@ -121,8 +121,8 @@ graph LR
 - **Auto Login** — Otomatis login ke TTLOCK API saat server start
 - **Lock History** — Cek riwayat pembukaan berdasarkan Lock ID
 - **All Lockboxes** — List semua lockbox dengan last open time (always fresh, no cache)
-- **Sortable Table** — Default smart sort: lockbox by gateway-first + last open terbaru, gateways by online-first
-- **Gateway List** — List semua gateway dengan jumlah lockbox tersambung, status online/offline
+- **Sortable Table** — Default smart sort: lockbox by gateway-first + last open terbaru, gateways by online-first + WiFi sortable
+- **Gateway List** — List semua gateway dengan jumlah lockbox tersambung, status online/offline, expandable lockbox list (tampilkan alias duluan)
 - **Gateway Topology** — Visual interaktif (canvas) gateway → lockbox, animasi garis, RSSI per koneksi, refresh 1 detik, drag/pan/zoom
 - **Inline Topology** — Topologi inline di bawah tabel, bukan modal overlay
 - **Unlock Terminal** — Remote unlock via gateway (TTLOCK API v3)

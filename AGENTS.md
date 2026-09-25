@@ -30,7 +30,7 @@ docker compose up -d --build             # both
 
 - **Don't touch ngrok** (PID usually running on port 5757 for external access)
 - **`frontend/` folder deleted** — legacy vanilla JS, no longer exists
-- Default sort: lockboxes by hasGateway desc + lastOpen desc; gateways by isOnline desc
+- Default sort: lockboxes by hasGateway desc + lastOpen desc; gateways by isOnline desc, WiFi sortable by networkName
 - RSSI colors: >-75 Strong (green), -85..-75 Medium (amber), <-85 Weak (red)
 - Backend cache: topology TTL 5s single-flight; lastOpen always fresh (no cache)
 
