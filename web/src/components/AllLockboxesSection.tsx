@@ -176,7 +176,7 @@ export function AllLockboxesSection({ onLockSelect, selectedLockId }: Props) {
               <TableHead className="w-6" />
               <SortHeader field="lockId">Lock ID</SortHeader>
               <SortHeader field="lockName">Name</SortHeader>
-              <TableHead className="whitespace-nowrap text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">Alias</TableHead>
+              <SortHeader field="lockAlias">Alias</SortHeader>
               <SortHeader field="lastOpen">Last Open</SortHeader>
               <SortHeader field="electricQuantity">Battery</SortHeader>
               <SortHeader field="hasGateway">Gateway</SortHeader>

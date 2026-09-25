@@ -129,7 +129,7 @@ export function GatewaysSection({ onOpenLock }: Props) {
                 <Fragment key={gw.gatewayId}>
                   <TableRow
                     data-state={isExpanded ? "expanded" : undefined}
-                    className={`cursor-pointer ${isExpanded ? "bg-muted/50" : ""}`}
+                    className={`cursor-pointer hover:bg-muted/80 ${isExpanded ? "bg-muted/50" : ""}`}
                     onClick={() => {
                       setExpandedId((prev) => (prev === gw.gatewayId ? null : gw.gatewayId));
                       if (expandedId === gw.gatewayId) {
@@ -192,89 +192,79 @@ export function GatewaysSection({ onOpenLock }: Props) {
                   </TableRow>
 
                   {isExpanded && (
-                    <TableRow key={`${gw.gatewayId}-expanded`}>
-                      <TableCell colSpan={7} className="bg-muted/20 p-0">
-                        <div className="px-4 py-3 ml-6">
-                          <div className="flex items-center justify-between mb-2">
-                            <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                              Connected Lockboxes
-                            </h4>
-                            {locksQuery.data && (
-                              <span className="text-xs text-muted-foreground">
-                                {locksQuery.data.locks.length} lock{locksQuery.data.locks.length !== 1 ? "s" : ""}
-                              </span>
+                    <>
+                      <TableRow key={`${gw.gatewayId}-expanded`} className="hover:bg-muted/50">
+                        <TableCell colSpan={7} className="bg-muted/20 p-0">
+                          <div className="px-4 py-3 ml-6">
+                            <div className="flex items-center justify-between mb-2">
+                              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                Connected Lockboxes
+                              </h4>
+                              {locksQuery.data && (
+                                <span className="text-xs text-muted-foreground">
+                                  {locksQuery.data.locks.length} lock{locksQuery.data.locks.length !== 1 ? "s" : ""}
+                                </span>
+                              )}
+                            </div>
+
+                            {locksQuery.isLoading && (
+                              <div className="space-y-2">
+                                {Array.from({ length: Math.min(gw.lockNum || 3, 5) }).map((_, i) => (
+                                  <Skeleton key={i} className="h-10 w-full rounded-lg" />
+                                ))}
+                              </div>
+                            )}
+
+                            {locksQuery.isError && (
+                              <p className="text-xs text-red-500 py-2">Failed to load lockboxes</p>
+                            )}
+
+                            {locksQuery.data && locksQuery.data.locks.length === 0 && (
+                              <div className="flex items-center gap-2 py-3 text-xs text-muted-foreground">
+                                <Unplug className="w-3.5 h-3.5" />
+                                No lockboxes connected to this gateway
+                              </div>
+                            )}
+
+                            {isTopologyVisible && (
+                              <InlineTopology
+                                gatewayId={gw.gatewayId}
+                                gatewayName={gw.networkName || String(gw.gatewayId)}
+                                lockNum={gw.lockNum ?? 0}
+                                onClose={() => setShowTopologyFor(null)}
+                              />
                             )}
                           </div>
+                        </TableCell>
+                      </TableRow>
 
-                          {locksQuery.isLoading && (
-                            <div className="space-y-2">
-                              {Array.from({ length: Math.min(gw.lockNum || 3, 5) }).map((_, i) => (
-                                <Skeleton key={i} className="h-10 w-full rounded-lg" />
-                              ))}
+                      {locksQuery.data?.locks.map((lock: GatewayLock) => (
+                        <TableRow
+                          key={lock.lockId}
+                          className="hover:!bg-muted/70 cursor-pointer"
+                          onClick={(e) => { e.stopPropagation(); onOpenLock(lock.lockId); }}
+                        >
+                          <TableCell colSpan={7} className="py-2 px-4 ml-6">
+                            <div className="flex items-center gap-6 ml-4">
+                              <span className="font-mono text-xs font-medium w-24 shrink-0">{lock.lockId}</span>
+                              <span className="truncate max-w-[180px] text-sm">{lock.lockAlias || lock.lockName || "-"}</span>
+                              <SignalDot rssi={lock.rssi} size="xs" />
+                              <div className="ml-auto">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 gap-1 text-xs opacity-60 hover:opacity-100 transition-opacity"
+                                  onClick={(e) => { e.stopPropagation(); onOpenLock(lock.lockId); }}
+                                >
+                                  <Eye className="w-3 h-3" />
+                                  Detail
+                                </Button>
+                              </div>
                             </div>
-                          )}
-
-                          {locksQuery.isError && (
-                            <p className="text-xs text-red-500 py-2">Failed to load lockboxes</p>
-                          )}
-
-                          {locksQuery.data && locksQuery.data.locks.length === 0 && (
-                            <div className="flex items-center gap-2 py-3 text-xs text-muted-foreground">
-                              <Unplug className="w-3.5 h-3.5" />
-                              No lockboxes connected to this gateway
-                            </div>
-                          )}
-
-                          {locksQuery.data && locksQuery.data.locks.length > 0 && (
-                            <Table>
-                              <TableHeader>
-                                <TableRow className="bg-muted/40">
-                                  <TableHead className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Lock ID</TableHead>
-                                  <TableHead className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Name</TableHead>
-                                  <TableHead className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Signal</TableHead>
-                                  <TableHead className="w-20" />
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {locksQuery.data.locks.map((lock: GatewayLock) => (
-                                  <TableRow
-                                    key={lock.lockId}
-                                    className="hover:bg-accent/50 cursor-pointer"
-                                    onClick={(e) => { e.stopPropagation(); onOpenLock(lock.lockId); }}
-                                  >
-                                    <TableCell className="font-mono text-xs font-medium">{lock.lockId}</TableCell>
-                                    <TableCell className="truncate max-w-[180px]">{lock.lockAlias || lock.lockName || "-"}</TableCell>
-                                    <TableCell>
-                                      <SignalDot rssi={lock.rssi} size="xs" />
-                                    </TableCell>
-                                    <TableCell className="w-20 text-right">
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-6 gap-1 text-xs opacity-60 hover:opacity-100 transition-opacity"
-                                        onClick={(e) => { e.stopPropagation(); onOpenLock(lock.lockId); }}
-                                      >
-                                        <Eye className="w-3 h-3" />
-                                        Detail
-                                      </Button>
-                                    </TableCell>
-                                  </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
-                          )}
-
-                          {isTopologyVisible && (
-                            <InlineTopology
-                              gatewayId={gw.gatewayId}
-                              gatewayName={gw.networkName || String(gw.gatewayId)}
-                              lockNum={gw.lockNum ?? 0}
-                              onClose={() => setShowTopologyFor(null)}
-                            />
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </>
                   )}
                 </Fragment>
               );
