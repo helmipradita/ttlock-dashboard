@@ -5,6 +5,7 @@ import { LockHistorySection } from "@/components/LockHistorySection";
 import { AllLockboxesSection } from "@/components/AllLockboxesSection";
 import { GatewaysSection } from "@/components/GatewaysSection";
 import { Lock, Network } from "lucide-react";
+import { useTheme } from "@/hooks/useTheme";
 
 interface LockSelect {
   id: number;
@@ -12,6 +13,7 @@ interface LockSelect {
 }
 
 export default function App() {
+  useTheme(); // Initialize and listen to system/stored theme
   const [lockSelect, setLockSelect] = useState<LockSelect | null>(null);
   const [tab, setTab] = useState("locks");
 

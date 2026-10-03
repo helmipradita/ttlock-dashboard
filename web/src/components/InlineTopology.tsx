@@ -77,20 +77,23 @@ export function InlineTopology({
   }, []);
 
   return (
-    <div className="mt-3 rounded-lg overflow-hidden border bg-[#0f172a] text-white">
+    <div className="mt-3 rounded-xl overflow-hidden border bg-card text-card-foreground shadow-sm">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-2 bg-gray-800/80 border-b border-gray-700">
+      <div className="flex items-center justify-between px-4 py-2.5 bg-muted/50 border-b">
         <div className="flex items-center gap-2 text-sm">
-          <Network className="w-4 h-4 text-indigo-400" />
-          <span className="font-medium">{gatewayName}</span>
-          <span className="text-xs text-muted-foreground">{lockNum} locks</span>
-          <span className="text-[10px] font-bold text-green-400 animate-pulse">● LIVE</span>
+          <Network className="w-4 h-4 text-primary" />
+          <span className="font-semibold text-foreground">{gatewayName}</span>
+          <span className="text-xs text-muted-foreground">({lockNum} locks)</span>
+          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-green-500 bg-green-500/10 px-1.5 py-0.5 rounded-full">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+            LIVE
+          </span>
         </div>
-        <div className="flex gap-1.5">
+        <div className="flex gap-1.5 items-center">
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
-            className="h-7 gap-1 text-xs text-gray-300 hover:text-white hover:bg-gray-700"
+            className="h-7 gap-1 text-xs"
             onClick={() => instRef.current?.resetLayout()}
           >
             <RotateCcw className="w-3 h-3" />
@@ -99,10 +102,10 @@ export function InlineTopology({
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 w-7 p-0 text-gray-300 hover:text-white hover:bg-gray-700"
+            className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
             onClick={onClose}
           >
-            <X className="w-3.5 h-3.5" />
+            <X className="w-4 h-4" />
           </Button>
         </div>
       </div>
@@ -110,19 +113,19 @@ export function InlineTopology({
       {/* Canvas area */}
       <div
         ref={wrapperRef}
-        className="relative h-96 flex items-center justify-center overflow-hidden"
+        className="relative h-96 flex items-center justify-center overflow-hidden bg-muted/10"
       >
         {query.isLoading && (
-          <div className="flex flex-col items-center gap-2 text-gray-400">
-            <div className="w-6 h-6 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+          <div className="flex flex-col items-center gap-2 text-muted-foreground">
+            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
             <span className="text-xs">Loading topology…</span>
           </div>
         )}
 
         {query.isError && (
-          <div className="flex flex-col items-center gap-2 text-red-400 text-xs">
+          <div className="flex flex-col items-center gap-2 text-red-500 text-xs">
             <span>Failed to load topology</span>
-            <span className="text-gray-500">{(query.error as Error)?.message}</span>
+            <span className="text-muted-foreground">{(query.error as Error)?.message}</span>
             <Button variant="outline" size="sm" onClick={() => query.refetch()} className="mt-1 h-6 text-xs">
               Retry
             </Button>
@@ -130,7 +133,7 @@ export function InlineTopology({
         )}
 
         {!query.isLoading && !query.isError && query.data && query.data.locks.length === 0 && (
-          <div className="flex flex-col items-center gap-2 text-gray-500">
+          <div className="flex flex-col items-center gap-2 text-muted-foreground">
             <Unplug className="w-5 h-5" />
             <span className="text-xs">No locks connected</span>
           </div>
@@ -147,17 +150,17 @@ export function InlineTopology({
       </div>
 
       {/* Legend */}
-      <div className="flex gap-4 px-4 py-1.5 bg-gray-800/80 border-t border-gray-700 text-[10px] text-gray-400">
+      <div className="flex gap-4 px-4 py-2 bg-muted/30 border-t text-[11px] text-muted-foreground">
         <span className="inline-flex items-center gap-1">
-          <WifiHigh className="w-3 h-3 text-green-400" />
+          <WifiHigh className="w-3.5 h-3.5 text-green-500" />
           Strong (&gt;-75)
         </span>
         <span className="inline-flex items-center gap-1">
-          <Wifi className="w-3 h-3 text-amber-400" />
+          <Wifi className="w-3.5 h-3.5 text-amber-500" />
           Medium (-75~-85)
         </span>
         <span className="inline-flex items-center gap-1">
-          <WifiLow className="w-3 h-3 text-red-400" />
+          <WifiLow className="w-3.5 h-3.5 text-red-500" />
           Weak (&lt;-85)
         </span>
       </div>

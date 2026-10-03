@@ -32,8 +32,22 @@ const NODE_H = 50;
 const LOCK_W = 90;
 const LOCK_H = 40;
 const GW_COLOR = "#6366f1";
-const LOCK_COLOR = "#334155";
-const BG = "#0f172a";
+
+function isDarkMode(): boolean {
+  return typeof document !== "undefined" && document.documentElement.classList.contains("dark");
+}
+
+function getThemeColors() {
+  const dark = isDarkMode();
+  return {
+    bg: dark ? "#18181b" : "#f8fafc",
+    grid: dark ? "#27272a" : "#e2e8f0",
+    lockBg: dark ? "#27272a" : "#ffffff",
+    lockText: dark ? "#f4f4f5" : "#0f172a",
+    edgeBg: dark ? "#18181b" : "#ffffff",
+    edgeText: dark ? "#e4e4e7" : "#334155",
+  };
+}
 
 export type TopologyData = {
   gateway: {
@@ -142,14 +156,15 @@ export function applyTopologyData(
   for (const l of data.locks) {
     const id = `lock_${l.lockId}`;
     const existing = s.nodes.find((n) => n.id === id);
+    const lockLabel = l.lockAlias || l.lockName || String(l.lockId);
     if (existing) {
       existing.rssi = l.rssi;
-      existing.label = l.lockName || l.lockAlias || String(l.lockId);
+      existing.label = lockLabel;
     } else {
       s.nodes.push({
         id,
         type: "lock",
-        label: l.lockName || l.lockAlias || String(l.lockId),
+        label: lockLabel,
         rssi: l.rssi,
         x: 0,
         y: 0,
@@ -212,7 +227,8 @@ function drawGrid(
   pan: { x: number; y: number },
   zoom: number
 ) {
-  ctx.strokeStyle = "#1e293b";
+  const colors = getThemeColors();
+  ctx.strokeStyle = colors.grid;
   ctx.lineWidth = 1;
   const step = 40 * zoom;
   const ox = pan.x % step;
@@ -254,25 +270,26 @@ function drawGatewayNode(ctx: CanvasRenderingContext2D, node: TopoNode) {
 }
 
 function drawLockNode(ctx: CanvasRenderingContext2D, node: TopoNode) {
+  const colors = getThemeColors();
   const x = node.x - LOCK_W / 2;
   const y = node.y - LOCK_H / 2;
   const color = rssiColor(node.rssi);
-  ctx.shadowColor = "rgba(0,0,0,0.3)";
+  ctx.shadowColor = isDarkMode() ? "rgba(0,0,0,0.4)" : "rgba(0,0,0,0.08)";
   ctx.shadowBlur = 6;
   ctx.beginPath();
   ctx.roundRect(x, y, LOCK_W, LOCK_H, 8);
-  ctx.fillStyle = LOCK_COLOR;
+  ctx.fillStyle = colors.lockBg;
   ctx.fill();
   ctx.strokeStyle = color;
   ctx.lineWidth = 2;
   ctx.stroke();
   ctx.shadowBlur = 0;
-  ctx.fillStyle = "#e2e8f0";
-  ctx.font = "11px -apple-system, sans-serif";
+  ctx.fillStyle = colors.lockText;
+  ctx.font = "bold 11px -apple-system, sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   const display =
-    node.label.length > 12 ? node.label.slice(0, 11) + "…" : node.label;
+    node.label.length > 13 ? node.label.slice(0, 12) + "…" : node.label;
   ctx.fillText(display, node.x, node.y - 5);
   ctx.font = "9px -apple-system, sans-serif";
   ctx.fillStyle = color;
@@ -284,6 +301,7 @@ function drawFrame(
   canvas: HTMLCanvasElement,
   state: TopoState
 ) {
+  const colors = getThemeColors();
   const rect = canvas.getBoundingClientRect();
   const w = rect.width;
   const h = rect.height;
@@ -292,7 +310,7 @@ function drawFrame(
   ctx.save();
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, w, h);
-  ctx.fillStyle = BG;
+  ctx.fillStyle = colors.bg;
   ctx.fillRect(0, 0, w, h);
   drawGrid(ctx, w, h, state.pan, state.zoom);
 
@@ -324,11 +342,14 @@ function drawFrame(
     const text = `${edge.rssi ?? "?"}dB`;
     ctx.font = "11px -apple-system, sans-serif";
     const tw = ctx.measureText(text).width + 10;
-    ctx.fillStyle = BG;
+    ctx.fillStyle = colors.edgeBg;
     ctx.beginPath();
     ctx.roundRect(mx - tw / 2, my - 10, tw, 20, 4);
     ctx.fill();
-    ctx.fillStyle = color;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = colors.edgeText;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText(text, mx, my);

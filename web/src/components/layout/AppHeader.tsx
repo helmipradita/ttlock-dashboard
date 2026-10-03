@@ -3,6 +3,7 @@ import { getAuthStatus } from "@/api/client";
 import { formatDate } from "@/lib/format";
 import { User, Shield } from "lucide-react";
 import { StatusBadge } from "@/components/status";
+import { ThemeToggle } from "./ThemeToggle";
 
 export function AppHeader() {
   const { data } = useQuery({
@@ -24,7 +25,7 @@ export function AppHeader() {
           </div>
         </div>
 
-        <div className="flex items-center gap-4 text-sm">
+        <div className="flex items-center gap-3 text-sm">
           {data?.authenticated ? (
             <>
               <StatusBadge variant="online" label="Active" size="xs" />
@@ -32,13 +33,16 @@ export function AppHeader() {
                 <User className="w-3 h-3 text-white/60" />
                 <span className="text-white/80">{data.username}</span>
               </span>
-              <span className="text-white/30 text-[10px]">
+              <span className="text-white/30 text-[10px] hidden sm:inline">
                 Expires {formatDate(data.expiresAt)}
               </span>
             </>
           ) : (
             <StatusBadge variant="offline" label="Not authenticated" size="xs" />
           )}
+          <div className="pl-1 border-l border-white/10">
+            <ThemeToggle />
+          </div>
         </div>
       </div>
     </header>
