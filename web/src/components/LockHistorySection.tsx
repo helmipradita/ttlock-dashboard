@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { getLock, getLockRecords, getLockGateway } from "@/api/client";
+import { getLock, getLockRecords, getLockGateway, getEnrichedLocks } from "@/api/client";
 import type { LockRecord } from "@/api/types";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,8 @@ import {
   WifiOff,
   History,
   KeyRound,
+  X,
+  Radio,
 } from "lucide-react";
 import { StatusBadge, SignalDot, wifiIconForRssi } from "@/components/status";
 
@@ -51,6 +53,8 @@ export function LockHistorySection({ lockSelect }: Props) {
   const [page, setPage] = useState(1);
   const [unlockOpen, setUnlockOpen] = useState(false);
   const [passcodeOpen, setPasscodeOpen] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!lockSelect) return;
@@ -59,6 +63,35 @@ export function LockHistorySection({ lockSelect }: Props) {
     setActiveId(id);
     setPage(1);
   }, [lockSelect?.n]);
+
+  // Click outside to close dropdown
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
+        setShowDropdown(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const allLocksQuery = useQuery({
+    queryKey: ["locks"],
+    queryFn: getEnrichedLocks,
+    staleTime: 60_000,
+  });
+
+  const filteredLocks = useMemo(() => {
+    const q = searchId.trim().toLowerCase();
+    if (!q) return [];
+    return (allLocksQuery.data?.list ?? [])
+      .filter((l) =>
+        String(l.lockId).includes(q) ||
+        (l.lockName && l.lockName.toLowerCase().includes(q)) ||
+        (l.lockAlias && l.lockAlias.toLowerCase().includes(q))
+      )
+      .slice(0, 8);
+  }, [allLocksQuery.data, searchId]);
 
   const lockQuery = useQuery({
     queryKey: ["lock", activeId],
@@ -78,11 +111,18 @@ export function LockHistorySection({ lockSelect }: Props) {
     enabled: !!activeId,
   });
 
-  function handleSearch() {
-    const id = searchId.trim();
+  function handleSearch(targetId?: string) {
+    const id = (targetId ?? searchId).trim();
     if (!id) return;
     setActiveId(id);
     setPage(1);
+    setShowDropdown(false);
+  }
+
+  function handleSelectLock(id: number) {
+    const strId = String(id);
+    setSearchId(strId);
+    handleSearch(strId);
   }
 
   const lock = lockQuery.data;
@@ -97,27 +137,99 @@ export function LockHistorySection({ lockSelect }: Props) {
         <CardTitle>Lock History by ID</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            id="lock-search"
-            placeholder="Enter Lock ID (e.g. 35057430)"
-            value={searchId}
-            onChange={(e) => setSearchId(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-            className="pl-9"
-          />
-          <div className="absolute right-2 top-1/2 -translate-y-1/2">
+        {/* Search Bar - Separated Input + Clear + Button with Autocomplete */}
+        <div ref={searchContainerRef} className="relative">
+          <div className="flex gap-2 items-center">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+              <Input
+                id="lock-search"
+                placeholder="Search Lock ID, Name, or Alias (e.g. 35057430, Lockbox-01)..."
+                value={searchId}
+                onChange={(e) => {
+                  setSearchId(e.target.value);
+                  setShowDropdown(true);
+                }}
+                onFocus={() => setShowDropdown(true)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleSearch();
+                  } else if (e.key === "Escape") {
+                    setShowDropdown(false);
+                  }
+                }}
+                className="pl-9 pr-9"
+              />
+              {searchId && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchId("");
+                    setShowDropdown(false);
+                  }}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1 rounded-full hover:bg-muted/80 transition-colors"
+                  title="Clear"
+                  aria-label="Clear search input"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
             <Button
-              onClick={handleSearch}
+              onClick={() => handleSearch()}
               disabled={lockQuery.isFetching}
-              size="sm"
-              className="h-7"
+              className="gap-1.5 shrink-0 px-4"
             >
+              <Search className="w-4 h-4" />
               {lockQuery.isFetching ? "Loading..." : "Search"}
             </Button>
           </div>
+
+          {/* Autocomplete Dropdown */}
+          {showDropdown && filteredLocks.length > 0 && (
+            <div className="absolute z-50 left-0 right-0 sm:right-auto sm:w-[480px] top-full mt-1.5 bg-popover text-popover-foreground border rounded-xl shadow-lg overflow-hidden max-h-72 overflow-y-auto">
+              <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground bg-muted/40 border-b">
+                Suggested Lockboxes
+              </div>
+              <div className="p-1 space-y-0.5">
+                {filteredLocks.map((item) => (
+                  <div
+                    key={item.lockId}
+                    className="flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer hover:bg-accent transition-colors"
+                    onClick={() => handleSelectLock(item.lockId)}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                      <div className="w-7 h-7 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                        <LockIcon className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm text-foreground truncate">
+                          {item.lockAlias || item.lockName || `Lock #${item.lockId}`}
+                        </p>
+                        {item.lockAlias && item.lockName && item.lockAlias !== item.lockName && (
+                          <p className="text-xs text-muted-foreground truncate">
+                            {item.lockName}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {item.hasGateway === 1 && (
+                        <span className="hidden sm:inline-flex items-center gap-1 text-[10px] text-green-500 bg-green-500/10 px-1.5 py-0.5 rounded">
+                          <Radio className="w-2.5 h-2.5" />
+                          Gateway
+                        </span>
+                      )}
+                      <span className="font-mono text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                        {item.lockId}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {lockQuery.isError && (

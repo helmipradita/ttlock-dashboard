@@ -1,270 +1,165 @@
 # TTLOCK Dashboard
 
-Web dashboard untuk **monitoring** smart lock TTLOCK (read-only). Menampilkan info lock, riwayat pembukaan, status semua lockbox, dan **topologi gateway** dalam satu halaman.
+Aplikasi web modern untuk **pemantauan (monitoring) dan pengelolaan** perangkat Smart Lock & Gateway TTLOCK. Menampilkan informasi status lockbox secara realtime, riwayat pembukaan, visualisasi topologi gateway interaktif, pembuatan PIN offline, dan pembukaan kunci jarak jauh dalam satu antarmuka yang responsif.
 
-> **Catatan:** Dashboard ini bersifat **ephemeral** — hanya dijalankan saat dibutuhkan, lalu dihentikan setelah selesai digunakan.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
+[![Docker Hub](https://img.shields.io/badge/Docker_Hub-Images_Available-0db7ed?logo=docker&logoColor=white)](https://hub.docker.com/u/helmipradita)
+[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](web/)
+[![Express](https://img.shields.io/badge/Express.js-Backend-black?logo=express)](backend/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)](web/tsconfig.json)
 
-## Architecture
+---
+
+## 📑 Daftar Isi
+
+- [Fitur Utama](#-fitur-utama)
+- [Arsitektur Singkat](#-arsitektur-singkat)
+- [Panduan Memulai Cepat (Quick Start)](#-panduan-memulai-cepat-quick-start)
+- [Dokumentasi Lengkap](#-dokumentasi-lengkap)
+- [Daftar Endpoint API](#-daftar-endpoint-api)
+- [Lisensi](#-lisensi)
+
+---
+
+## ✨ Fitur Utama
+
+- 🔑 **Offline One-Time Passcode**: Pembuatan PIN satu kali pakai secara instan (berlaku 6 jam) berbasis algoritma sinkronisasi waktu TTLOCK tanpa membutuhkan koneksi gateway internet.
+- 🔓 **Remote Unlock**: Perintah buka kunci jarak jauh secara instan melalui Gateway WiFi yang terhubung.
+- 🌐 **Interactive Gateway Topology**: Visualisasi grafis hubungan Gateway $\leftrightarrow$ Lockbox dengan indikator kekuatan sinyal (RSSI), animasi realtime, dan kanvas interaktif (pan, zoom, drag).
+- 🔍 **Pencarian Cerdas & Autocomplete**: Pencarian cepat instan dengan dropdown interaktif berdasarkan Lock ID, Nama Lockbox, dan Alias Lockbox.
+- 🌓 **Dark & Light Mode**: Deteksi otomatis tema sistem operasi (OS) pengguna dengan tombol pengubah mode manual dan persistensi penyimpanan.
+- 📊 **Tabel Interaktif Multi-Sorting**: Pengurutan cerdas tabel Lockbox dan Gateway berdasarkan status online, kekuatan sinyal WiFi, nama alias, dan aktivitas buka terakhir.
+- 🔄 **Auto-Token Management**: Manajemen token OAuth2 otomatis dengan pembaruan token (*auto-refresh*) berkala 24 jam sebelum kadaluarsa.
+
+---
+
+## 📐 Arsitektur Singkat
 
 ```mermaid
 graph TB
-    subgraph Browser
-        A[React SPA] --> B[AppHeader]
-        B --> C[Lockboxes Tab]
-        B --> D[Gateways Tab]
-        C --> E[LockHistorySection]
-        C --> F[AllLockboxesSection]
-        D --> G[GatewaysSection]
-        G --> H[InlineTopology]
-        E --> I[UnlockTerminal]
+    subgraph Klien["Browser / Klien"]
+        UI["React 19 SPA (Vite + TypeScript)"]
+        Theme["Theme Manager (Dark / Light)"]
+        UI --- Theme
     end
 
-    subgraph "Docker: port 5757"
-        J[nginx] -->|"/api/* proxy"| K[Express Backend :5000]
-        J -->|"static assets"| L[React Build]
+    subgraph Docker["Docker Host (Port 5757)"]
+        Nginx["Nginx Reverse Proxy & Static Server"]
+        Backend["Express.js API Service (:5000)"]
+        Nginx -->|"/api/*"| Backend
+        Nginx -->|"Static Build"| UI
     end
 
-    A -.->|axios + polling| J
-    K -.->|TTLOCK API v3| M[TTLOCK Cloud]
+    subgraph External["Cloud Provider"]
+        TTLock["TTLOCK Open Platform API v3"]
+        Backend -->|"OAuth2 HTTPS"| TTLock
+    end
 ```
 
-## Data Flow
+Untuk rincian diagram data flow, sequence diagram, dan component tree lengkap, silakan lihat [Dokumentasi Arsitektur](docs/ARCHITECTURE.md).
 
-```mermaid
-sequenceDiagram
-    participant FE as Frontend
-    participant NG as nginx :5757
-    participant BE as Backend :5000
-    participant TT as TTLOCK API
+---
 
-    Note over FE: Polling /api/locks/enriched (auto)
-    FE->>NG: GET /api/locks/enriched
-    NG->>BE: proxy_pass :5000
-    BE->>TT: v3/lock/list + v3/lock/openRecord
-    TT-->>BE: lock data + lastOpen
-    BE-->>FE: enriched locks
+## 🚀 Panduan Memulai Cepat (Quick Start)
 
-    Note over FE: User clicks Lock ID
-    FE->>NG: GET /api/locks/:id/records
-    NG->>BE: proxy_pass
-    BE->>TT: v3/lock/openRecord (paginated)
-    TT-->>BE: unlock history
-    BE-->>FE: records
+Pilih salah satu metode yang paling sesuai dengan kebutuhan Anda:
 
-    Note over FE: User clicks Unlock
-    FE->>NG: POST /api/locks/:id/unlock
-    NG->>BE: proxy_pass
-    BE->>TT: POST v3/lock/unlock
-    TT-->>BE: errcode 0 = success
-    BE-->>FE: unlock result
-    FE->>FE: invalidateQueries(["locks"])
-```
+### 📦 Opsi 1: Menjalankan Langsung via Docker Hub (Tanpa Clone Source Code)
 
-## Docker Architecture
+Cocok bagi pengguna yang hanya ingin langsung menjalankan aplikasi di server atau komputer lokal tanpa meng-compile kode sumber.
 
-```mermaid
-graph LR
-    subgraph Host
-        P[":5757"]
-    end
+1. Buat file `docker-compose.yml` di folder mana saja:
+   ```yaml
+   services:
+     backend:
+       image: helmipradita/ttlock-backend:latest
+       environment:
+         - CLIENT_ID=your_client_id
+         - CLIENT_SECRET=your_client_secret
+         - USERNAME=your_ttlock_email
+         - PASSWORD=your_md5_password
+         - PORT=5000
+       expose:
+         - "5000"
+       restart: unless-stopped
 
-    subgraph "web-nginx container"
-        N[nginx] --> S[Static Build]
-        N -->|"/api/*"| B
-    end
+     web-nginx:
+       image: helmipradita/ttlock-web-nginx:latest
+       ports:
+         - "5757:5757"
+       depends_on:
+         - backend
+       restart: unless-stopped
+   ```
+2. Jalankan perintah:
+   ```bash
+   docker compose up -d
+   ```
+3. Buka browser di **`http://localhost:5757`**.
 
-    subgraph "backend container"
-        B[Express :5000] -->|HTTP| T[TTLOCK Cloud]
-    end
+👉 **[Lihat Panduan Lengkap Docker Hub / docker run](docs/DEPLOYMENT.md#2-cara-cepat-menjalankan-langsung-via-image-docker-hub-tanpa-clone-source-code)**
 
-    P --> N
-```
+---
 
-| Service | CPU Limit | Memory Limit | CPU Reserve | Memory Reserve |
-|---------|-----------|-------------|-------------|----------------|
-| backend | 2 | 512M | 0.5 | 256M |
-| web-nginx | 1 | 256M | 0.25 | 128M |
+### 💻 Opsi 2: Menjalankan dari Source Code (Clone Repository)
 
-## Component Tree
-
-```mermaid
-graph LR
-    App --> AppHeader
-    App --> Tabs
-    Tabs -->|"locks"| LockHistorySection
-    Tabs -->|"locks"| AllLockboxesSection
-    Tabs -->|"gateways"| GatewaysSection
-    LockHistorySection --> StatusBadge
-    LockHistorySection --> SignalDot
-    LockHistorySection --> UnlockTerminal
-    AllLockboxesSection --> StatusBadge
-    AllLockboxesSection --> InlineGateway
-    GatewaysSection --> InlineTopology
-    GatewaysSection --> SignalDot
-    InlineTopology --> Canvas[Canvas Renderer]
-```
-
-## Tech Stack
-
-| Layer | Teknologi |
-|---|---|
-| Backend | Express.js + TypeScript |
-| Frontend | React 19 + Vite 5.4 + TypeScript |
-| UI | shadcn/ui + Radix UI + Lucide Icons |
-| State | TanStack Query (polling, cache invalidation) |
-| Styling | Tailwind CSS 4 |
-| Production | nginx (reverse proxy + static) + Node.js |
-| API | TTLOCK Open Platform API v3 |
-
-## Features
-
-- **Auto Login** — Otomatis login ke TTLOCK API saat server start
-- **Lock History** — Cek riwayat pembukaan berdasarkan Lock ID
-- **All Lockboxes** — List semua lockbox dengan last open time (always fresh, no cache)
-- **Sortable Table** — Default smart sort: lockbox by gateway-first + last open terbaru, gateways by online-first + WiFi sortable
-- **Gateway List** — List semua gateway dengan jumlah lockbox tersambung, status online/offline, expandable lockbox list (tampilkan alias duluan)
-- **Gateway Topology** — Visual interaktif (canvas) gateway → lockbox, animasi garis, RSSI per koneksi, refresh 1 detik, drag/pan/zoom
-- **Inline Topology** — Topologi inline di bawah tabel, bukan modal overlay
-- **Unlock Terminal** — Remote unlock via gateway (TTLOCK API v3)
-- **WiFi Signal Icons** — Icon WiFi berdasarkan kekuatan sinyal (Strong/Medium/Weak)
-- **Smart Pagination** — Pagination efisien untuk ribuan records
-
-## Prerequisites
-
-- Node.js 18+ (development) / Node.js 22 (Docker)
-- npm
-- Docker & Docker Compose (untuk production)
-- Akun TTLOCK developer (client_id, client_secret)
-- Akun TTLOCK APP (username, password MD5)
-
-## Setup
-
-### Development (2 terminal)
+Cocok bagi pengembang yang ingin memodifikasi atau mengembangkan kode aplikasi.
 
 ```bash
+# 1. Clone repository
 git clone https://github.com/helmipradita/ttlock-dashboard.git
 cd ttlock-dashboard
 
-# Terminal 1: Backend
-cd backend
-cp .env.example .env   # Isi credential TTLOCK
-npm install
-npm run dev            # http://localhost:5757
+# 2. Siapkan file konfigurasi environment
+cp backend/.env.example backend/.env
+# Isi CLIENT_ID, CLIENT_SECRET, USERNAME, dan PASSWORD pada backend/.env
 
-# Terminal 2: Frontend
-cd web
-npm install
-npm run dev            # http://localhost:5173 (proxy /api → :5757)
-```
-
-### Docker (production)
-
-```bash
-git clone https://github.com/helmipradita/ttlock-dashboard.git
-cd ttlock-dashboard
-
-# Setup env
-cp backend/.env.example backend/.env   # Isi credential TTLock
-
-# Build & run (nginx expose port 5757)
+# 3. Jalankan aplikasi (Otomatis build di dalam Docker)
 docker compose up -d --build
 
-# Buka browser
+# 4. Buka di browser
 # http://localhost:5757
 ```
 
-**Rebuild per-service:**
-```bash
-docker compose up -d --build web-nginx   # frontend only
-docker compose up -d --build backend     # backend only
-docker compose up -d --build             # both
-```
+> **Tips Build:** Anda **tidak perlu** menjalankan `npm run build` lokal sebelum `docker compose up`, karena Dockerfile sudah menggunakan multi-stage build otomatis.
 
-## API Endpoints
+---
 
-| Endpoint | Method | Description |
+## 📚 Dokumentasi Lengkap
+
+Untuk panduan mendalam dan spesifikasi teknis, kunjungi dokumen di folder `docs/`:
+
+| Dokumen | Deskripsi |
+|---|---|
+| 📐 [**Arsitektur Sistem**](docs/ARCHITECTURE.md) | Diagram interaksi modul, sequence diagram passcode & unlock, dan arsitektur container. |
+| 🛠️ [**Spesifikasi Tech Stack**](docs/TECH_STACK.md) | Rincian lengkap teknologi frontend, backend, UI framework, dan library yang digunakan. |
+| 🔌 [**Referensi API**](docs/API_REFERENCE.md) | Kontrak request & response API internal serta pemetaan kode error TTLOCK. |
+| 🚀 [**Panduan Deployment**](docs/DEPLOYMENT.md) | Konfigurasi variabel environment, tutorial Docker Hub tanpa clone, alokasi memori container, dan troubleshooting. |
+| 🖥️ [**Backend Service**](backend/README.md) | Dokumentasi teknis backend Express.js dan panduan development mandiri. |
+| 🌐 [**Frontend Application**](web/README.md) | Dokumentasi teknis frontend React dan struktur komponen antarmuka. |
+
+---
+
+## 🔌 Daftar Endpoint API
+
+| Metode | Endpoint | Deskripsi |
 |---|---|---|
-| `/api/auth/status` | GET | Status autentikasi |
-| `/api/locks/enriched` | GET | List semua lockbox + last open (always fresh) |
-| `/api/locks` | GET | List semua lockbox (raw) |
-| `/api/locks/:lockId` | GET | Detail lockbox |
-| `/api/locks/:lockId/records` | GET | Riwayat pembukaan (paginated) |
-| `/api/locks/:lockId/gateway` | GET | Info gateway lockbox |
-| `/api/locks/:lockId/unlock` | POST | Remote unlock via gateway |
-| `/api/locks/:lockId/passcode` | POST | Generate offline One-Time Passcode (6 jam) |
-| `/api/gateways` | GET | List semua gateway |
-| `/api/gateways/:gatewayId/topology` | GET | Topologi gateway + lockbox (cached 5s, single-flight) |
+| `GET` | `/api/auth/status` | Mengecek status autentikasi OAuth2 token TTLOCK |
+| `GET` | `/api/locks/enriched` | Mengambil seluruh daftar lockbox dengan data `lastOpen` realtime |
+| `GET` | `/api/locks` | Mengambil seluruh daftar mentah lockbox |
+| `GET` | `/api/locks/:lockId` | Mengambil rincian spesifikasi teknis lockbox |
+| `GET` | `/api/locks/:lockId/records` | Mengambil log riwayat pembukaan kunci secara paginated |
+| `GET` | `/api/locks/:lockId/gateway` | Mengambil info gateway dan sinyal RSSI yang terhubung ke lockbox |
+| `POST` | `/api/locks/:lockId/passcode` | **Membuat One-Time Passcode offline (berlaku 6 jam)** |
+| `POST` | `/api/locks/:lockId/unlock` | **Mengirim perintah buka kunci jarak jauh via Gateway WiFi** |
+| `GET` | `/api/gateways` | Mengambil daftar seluruh Gateway yang terdaftar |
+| `GET` | `/api/gateways/:gatewayId/topology` | Mengambil topologi Gateway $\leftrightarrow$ Lockbox (cache 5 detik) |
 
-## RSSI & WiFi Signal
+---
 
-| Threshold | Label | Icon | Color |
-|---|---|---|---|
-| > -75 | Strong | `WifiHigh` | Green |
-| -75 .. -85 | Medium | `Wifi` | Amber |
-| < -85 | Weak | `WifiLow` | Red |
-| null | Unknown | `WifiZero` | Gray |
-| Disconnected | — | `WifiOff` | Gray |
+## 📄 Lisensi
 
-Helper: `wifiIconForRssi()` dan `wifiIconForOnline()` di `status.tsx`.
+Proyek ini didistribusikan di bawah lisensi open source [**MIT License**](LICENSE).
 
-## Project Structure
-
-```
-TTLOCK/
-├── docker-compose.yml
-├── Dockerfile.backend
-├── Dockerfile.web
-├── nginx/nginx.conf
-├── README.md
-├── AGENTS.md
-├── backend/
-│   ├── package.json
-│   ├── tsconfig.json
-│   ├── .env.example
-│   └── src/
-│       ├── main.ts              # Express entry + TTLock init
-│       ├── config.ts            # Env loader
-│       ├── services/
-│       │   └── ttlock.service.ts
-│       └── routes/
-│           └── ttlock.routes.ts
-└── web/
-    ├── vite.config.ts
-    ├── components.json
-    └── src/
-        ├── main.tsx
-        ├── App.tsx              # Tabs: Lockboxes + Gateways
-        ├── api/                 # Typed API client + types
-        ├── components/
-        │   ├── layout/          # AppHeader
-        │   ├── ui/              # shadcn/ui primitives
-        │   ├── status.tsx       # StatusBadge + SignalDot + wifi helpers
-        │   ├── LockHistorySection.tsx
-        │   ├── AllLockboxesSection.tsx
-        │   ├── GatewaysSection.tsx
-        │   └── InlineTopology.tsx
-        ├── hooks/
-        ├── lib/                 # format.ts, utils.ts
-        └── topology/
-            └── topology-canvas.ts  # Canvas renderer
-```
-
-## Environment Variables
-
-```env
-CLIENT_ID=your_app_id           # Dari TTLOCK developer portal
-CLIENT_SECRET=your_app_secret   # Dari TTLOCK developer portal
-USERNAME=your_ttlock_email      # Akun TTLock APP (email)
-PASSWORD=your_md5_password      # Password dalam MD5 hash
-PORT=5757                       # Default backend port (Docker override ke 5000)
-```
-
-## Deployment Notes
-
-- Dashboard bersifat **temporary** — `docker compose down` setelah selesai
-- **Jangan sentuh ngrok** jika ada process yang berjalan
-- Credential di `backend/.env` rahasia — jangan commit
-
-## License
-
-MIT
+Hak Cipta (c) 2026 Helmi Pradita.
