@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { unlockLock } from "@/api/client";
 import type { UnlockResponse } from "@/api/types";
+import { Unlock, CheckCircle2, AlertCircle, RefreshCw, Radio, Info } from "lucide-react";
 
 interface Props {
   lockId: number;
@@ -14,13 +15,13 @@ interface Props {
 
 export function UnlockTerminal({ lockId, lockName, open, onClose }: Props) {
   const [loading, setLoading] = useState(false);
-  const [history, setHistory] = useState<UnlockResponse[]>([]);
+  const [lastResult, setLastResult] = useState<UnlockResponse | null>(null);
   const queryClient = useQueryClient();
 
   async function doUnlock() {
     setLoading(true);
     const res = await unlockLock(lockId);
-    setHistory((h) => [...h, res]);
+    setLastResult(res);
     if (res.ok) {
       queryClient.invalidateQueries({ queryKey: ["locks"] });
     }
@@ -28,87 +29,141 @@ export function UnlockTerminal({ lockId, lockName, open, onClose }: Props) {
   }
 
   function handleClose() {
-    setHistory([]);
+    setLastResult(null);
     onClose();
   }
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
-      <DialogContent className="sm:max-w-lg bg-[#0c0c0c] border border-green-900/40 font-mono text-sm">
+      <DialogContent className="sm:max-w-md bg-card border text-card-foreground">
         <DialogHeader>
-          <DialogTitle className="text-green-400 font-mono flex items-center gap-2">
-            <span className="text-green-500/60">$</span>
-            unlock --id {lockId}
-            <span className="text-muted-foreground text-xs font-sans ml-auto">{lockName}</span>
-          </DialogTitle>
+          <div className="flex items-center gap-2 text-primary font-semibold">
+            <Unlock className="w-5 h-5" />
+            <DialogTitle>Remote Unlock</DialogTitle>
+          </div>
+          <DialogDescription className="text-xs text-muted-foreground flex items-center justify-between pt-1">
+            <span>Lockbox: <strong className="text-foreground">{lockName}</strong></span>
+            <span className="font-mono">ID: {lockId}</span>
+          </DialogDescription>
         </DialogHeader>
 
-        {/* History log */}
-        <div className="space-y-1 max-h-64 overflow-y-auto">
-          {history.map((entry, i) => (
-            <div
-              key={i}
-              className={`leading-relaxed ${
-                entry.ok ? "text-green-400" : "text-red-400"
-              }`}
-            >
-              <span className="text-muted-foreground text-xs">{new Date(entry.ts).toLocaleTimeString()}</span>
-              <span className="mx-1.5">{entry.ok ? "✓" : "✗"}</span>
-              <span className={entry.ok ? "text-green-300" : "text-red-300"}>
-                {entry.human}
-              </span>
-              {!entry.ok && (
-                <span className="text-muted-foreground ml-2">
-                  [errcode:{entry.errcode}] {entry.errmsg}
-                </span>
-              )}
-              {!entry.ok && entry.description && entry.description !== entry.errmsg && (
-                <div className="text-muted-foreground/70 ml-6 text-xs">
-                  {entry.description}
-                </div>
-              )}
-            </div>
-          ))}
-
+        <div className="space-y-4 py-2">
           {loading && (
-            <div className="text-green-500 animate-pulse">
-              <span className="text-muted-foreground text-xs">{new Date().toLocaleTimeString()}</span>
-              <span className="mx-1.5">⏵</span>
-              sending unlock command...
+            <div className="flex flex-col items-center justify-center py-8 space-y-3">
+              <RefreshCw className="w-8 h-8 animate-spin text-primary" />
+              <p className="text-xs text-muted-foreground">Sending unlock command via Gateway...</p>
             </div>
           )}
 
-          {history.length === 0 && !loading && (
-            <div className="text-muted-foreground/60 py-2">
-              Click confirm below to send unlock command to gateway.
+          {!loading && !lastResult && (
+            <div className="bg-muted/40 border rounded-xl p-6 text-center space-y-4">
+              <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto">
+                <Radio className="w-6 h-6 animate-pulse" />
+              </div>
+              <div className="space-y-1">
+                <h4 className="font-medium text-sm text-foreground">Buka Kunci Jarak Jauh</h4>
+                <p className="text-xs text-muted-foreground max-w-xs mx-auto">
+                  Perintah unlock akan dikirimkan secara instan melalui gateway yang terhubung.
+                </p>
+              </div>
+              <Button
+                onClick={doUnlock}
+                className="gap-2 font-medium w-full sm:w-auto px-6"
+                size="sm"
+              >
+                <Unlock className="w-4 h-4" />
+                Confirm Unlock
+              </Button>
             </div>
           )}
-        </div>
 
-        {/* Footer */}
-        <div className="flex gap-2 pt-2 border-t border-green-900/30">
-          {history.length === 0 && !loading ? (
-            <Button
-              onClick={doUnlock}
-              className="bg-green-900/40 hover:bg-green-900/70 text-green-300 border border-green-700/50 font-mono"
-            >
-              ⚠ Confirm Unlock
-            </Button>
-          ) : !loading ? (
-            <Button
-              onClick={doUnlock}
-              className="bg-green-900/40 hover:bg-green-900/70 text-green-300 border border-green-700/50 font-mono"
-            >
-              ↻ Retry
-            </Button>
-          ) : null}
-          <Button
-            variant="ghost"
-            onClick={handleClose}
-            className="text-muted-foreground ml-auto font-mono"
-          >
-            [esc] close
-          </Button>
+          {!loading && lastResult && lastResult.ok && (
+            <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-5 text-center space-y-3">
+              <div className="w-10 h-10 rounded-full bg-green-500/20 text-green-500 flex items-center justify-center mx-auto">
+                <CheckCircle2 className="w-6 h-6" />
+              </div>
+              <div className="space-y-1">
+                <h4 className="font-semibold text-sm text-green-500">Lock Berhasil Dibuka!</h4>
+                <p className="text-xs text-muted-foreground">
+                  Perintah sukses dieksekusi oleh gateway pada {new Date(lastResult.ts).toLocaleTimeString()}.
+                </p>
+              </div>
+              <div className="pt-2 flex items-center justify-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 text-xs gap-1.5 border-green-500/30 text-green-600 dark:text-green-400 hover:bg-green-500/10"
+                  onClick={doUnlock}
+                >
+                  <RefreshCw className="w-3.5 h-3.5" /> Unlock Lagi
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="h-8 text-xs font-medium"
+                  onClick={handleClose}
+                >
+                  Tutup
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {!loading && lastResult && !lastResult.ok && (
+            <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-5 space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center shrink-0">
+                  <AlertCircle className="w-5 h-5" />
+                </div>
+                <div className="space-y-1 text-left flex-1">
+                  <h4 className="font-semibold text-sm text-red-500">Gagal Membuka Lock</h4>
+                  <p className="text-xs text-foreground font-medium">{lastResult.human || lastResult.errmsg}</p>
+                  {lastResult.description && lastResult.description !== lastResult.errmsg && (
+                    <p className="text-[11px] text-muted-foreground">{lastResult.description}</p>
+                  )}
+                  {lastResult.errcode !== 0 && (
+                    <p className="text-[11px] font-mono text-muted-foreground pt-1">
+                      Error Code: {lastResult.errcode}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="pt-2 flex justify-end gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 text-xs gap-1.5"
+                  onClick={doUnlock}
+                >
+                  <RefreshCw className="w-3.5 h-3.5" /> Coba Lagi
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="h-8 text-xs"
+                  onClick={handleClose}
+                >
+                  Tutup
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Rules / Requirements Card */}
+          <div className="bg-muted/30 border border-border/50 rounded-lg p-3 space-y-2 text-xs">
+            <div className="flex items-center gap-1.5 font-medium text-foreground">
+              <Info className="w-3.5 h-3.5 text-primary" />
+              <span>Syarat Remote Unlock</span>
+            </div>
+            <ul className="space-y-1 text-muted-foreground pl-5 list-disc text-[11px]">
+              <li>
+                <strong className="text-foreground">Gateway Aktif:</strong> Lockbox harus berada dalam jangkauan sinyal Bluetooth dari Gateway WiFi TTLOCK yang Online.
+              </li>
+              <li>
+                <strong className="text-foreground">Pengaturan Aplikasi:</strong> Fitur <em>Remote Unlock</em> wajib diaktifkan pada pengaturan lockbox di aplikasi TTLOCK.
+              </li>
+            </ul>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
