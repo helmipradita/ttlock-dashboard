@@ -328,6 +328,58 @@ class TTLockService {
     }
   }
 
+  async getOneTimePasscode(lockId: string) {
+    const ts = new Date().toISOString();
+    try {
+      // Passcode type 1 = One-time (valid for 6 hours)
+      // keyboardPwdVersion: lock default is 4
+      const raw = await this.post<{
+        errcode?: number;
+        errmsg?: string;
+        description?: string;
+        keyboardPwd?: string;
+        keyboardPwdId?: number | string;
+      }>("/v3/keyboardPwd/get", {
+        lockId,
+        keyboardPwdVersion: "4",
+        keyboardPwdType: "1",
+      });
+
+      if (raw.errcode && raw.errcode !== 0) {
+        return {
+          ok: false,
+          errcode: raw.errcode,
+          errmsg: raw.errmsg || "Failed to generate passcode",
+          description: raw.description || null,
+          human: TTLOCK_ERROR_CODES[raw.errcode] || raw.errmsg || "Failed to generate passcode",
+          lockId: Number(lockId),
+          ts,
+        };
+      }
+
+      return {
+        ok: true,
+        keyboardPwd: raw.keyboardPwd,
+        keyboardPwdId: raw.keyboardPwdId ? Number(raw.keyboardPwdId) : undefined,
+        lockId: Number(lockId),
+        type: 1,
+        typeName: "One-time",
+        validHours: 6,
+        ts,
+      };
+    } catch (err: any) {
+      return {
+        ok: false,
+        errcode: -1,
+        errmsg: err.message || "Network or server error",
+        description: null,
+        human: "Failed to reach TTLock API",
+        lockId: Number(lockId),
+        ts,
+      };
+    }
+  }
+
   async getGatewayTopology(gatewayId: string): Promise<any> {
     const cached = this.topologyCache.get(gatewayId);
     if (cached && Date.now() < cached.expiresAt) return cached.data;

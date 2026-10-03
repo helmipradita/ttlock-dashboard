@@ -191,6 +191,7 @@ docker compose up -d --build             # both
 | `/api/locks/:lockId/records` | GET | Riwayat pembukaan (paginated) |
 | `/api/locks/:lockId/gateway` | GET | Info gateway lockbox |
 | `/api/locks/:lockId/unlock` | POST | Remote unlock via gateway |
+| `/api/locks/:lockId/passcode` | POST | Generate offline One-Time Passcode (6 jam) |
 | `/api/gateways` | GET | List semua gateway |
 | `/api/gateways/:gatewayId/topology` | GET | Topologi gateway + lockbox (cached 5s, single-flight) |
 

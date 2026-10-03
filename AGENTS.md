@@ -45,6 +45,7 @@ docker compose up -d --build             # both
 | `/api/locks/:lockId/records` | GET | Unlock history |
 | `/api/locks/:lockId/gateway` | GET | Lock's gateway info |
 | `/api/locks/:lockId/unlock` | POST | **Unlock lock via gateway** |
+| `/api/locks/:lockId/passcode` | POST | **Generate offline One-Time Passcode** |
 | `/api/gateways` | GET | All gateways |
 | `/api/gateways/:gatewayId/topology` | GET | Gateway topology (cached 5s) |
 

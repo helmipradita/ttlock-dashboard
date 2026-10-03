@@ -12,6 +12,7 @@ import {
   LOCK_RECORD_TYPES,
 } from "@/lib/format";
 import { UnlockTerminal } from "@/components/UnlockTerminal";
+import { PasscodeModal } from "@/components/PasscodeModal";
 import {
   Table,
   TableHeader,
@@ -29,6 +30,7 @@ import {
   BatteryWarning,
   WifiOff,
   History,
+  KeyRound,
 } from "lucide-react";
 import { StatusBadge, SignalDot, wifiIconForRssi } from "@/components/status";
 
@@ -48,6 +50,7 @@ export function LockHistorySection({ lockSelect }: Props) {
   const [activeId, setActiveId] = useState("");
   const [page, setPage] = useState(1);
   const [unlockOpen, setUnlockOpen] = useState(false);
+  const [passcodeOpen, setPasscodeOpen] = useState(false);
 
   useEffect(() => {
     if (!lockSelect) return;
@@ -137,13 +140,22 @@ export function LockHistorySection({ lockSelect }: Props) {
                   <p className="text-xs text-muted-foreground font-mono">ID: {lock.lockId}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 flex-wrap">
                 <StatusBadge
                   variant={lock.hasGateway === 1 ? "online" : "offline"}
                   label={lock.hasGateway === 1 ? "With Gateway" : "No Gateway"}
                   size="xs"
                   icon={lock.hasGateway === 1 ? wifiIconForRssi(gw?.rssi).Icon : WifiOff}
                 />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 border-primary/40 text-primary hover:bg-primary/10"
+                  onClick={() => setPasscodeOpen(true)}
+                >
+                  <KeyRound className="w-3.5 h-3.5" />
+                  Get PIN
+                </Button>
                 <Button
                   variant="outline"
                   size="sm"
@@ -323,12 +335,20 @@ export function LockHistorySection({ lockSelect }: Props) {
       </CardContent>
 
       {lock && (
-        <UnlockTerminal
-          lockId={lock.lockId}
-          lockName={lock.lockAlias || lock.lockName || String(lock.lockId)}
-          open={unlockOpen}
-          onClose={() => setUnlockOpen(false)}
-        />
+        <>
+          <UnlockTerminal
+            lockId={lock.lockId}
+            lockName={lock.lockAlias || lock.lockName || String(lock.lockId)}
+            open={unlockOpen}
+            onClose={() => setUnlockOpen(false)}
+          />
+          <PasscodeModal
+            lockId={lock.lockId}
+            lockName={lock.lockAlias || lock.lockName || String(lock.lockId)}
+            open={passcodeOpen}
+            onClose={() => setPasscodeOpen(false)}
+          />
+        </>
       )}
     </Card>
   );

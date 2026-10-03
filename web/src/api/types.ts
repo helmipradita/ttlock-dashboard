@@ -64,3 +64,18 @@ export interface UnlockResponse {
   lockId: number;
   ts: string;
 }
+
+export interface PasscodeResponse {
+  ok: boolean;
+  keyboardPwd?: string;
+  keyboardPwdId?: number;
+  lockId: number;
+  type?: number;
+  typeName?: string;
+  validHours?: number;
+  errcode?: number;
+  errmsg?: string;
+  description?: string | null;
+  human?: string;
+  ts: string;
+}
