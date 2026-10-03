@@ -331,8 +331,10 @@ class TTLockService {
   async getOneTimePasscode(lockId: string) {
     const ts = new Date().toISOString();
     try {
-      // Passcode type 1 = One-time (valid for 6 hours)
+      const now = Date.now();
+      // Passcode type 1 = One-time (valid for 6 hours from startDate)
       // keyboardPwdVersion: lock default is 4
+      // TTLOCK API requires startDate for calculating algorithmic passcode
       const raw = await this.post<{
         errcode?: number;
         errmsg?: string;
@@ -343,7 +345,10 @@ class TTLockService {
         lockId,
         keyboardPwdVersion: "4",
         keyboardPwdType: "1",
+        startDate: now.toString(),
       });
+
+      console.log(`[TTLock] Passcode response for lock ${lockId}:`, raw);
 
       if (raw.errcode && raw.errcode !== 0) {
         return {
