@@ -18,6 +18,10 @@ export function getAuthStatus() {
   return apiFetch<AuthStatus>("/api/auth/status");
 }
 
+export function getLocks() {
+  return apiFetch<{ list: Lock[]; total: number }>("/api/locks");
+}
+
 export function getEnrichedLocks() {
   return apiFetch<{ list: Lock[]; total: number }>("/api/locks/enriched");
 }
@@ -33,7 +37,7 @@ export function getLockRecords(lockId: string, pageNo: number, pageSize = 10) {
 }
 
 export function getLockGateway(lockId: string) {
-  return apiFetch<{ list: (GatewayInfo & { rssi: number | null })[] }>(
+  return apiFetch<{ list: (GatewayInfo & { rssi: number | null; rssiUpdateDate: number | null })[] }>(
     `/api/locks/${lockId}/gateway`
   );
 }

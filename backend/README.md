@@ -7,10 +7,12 @@ Service API Gateway berbasis **Node.js + Express.js + TypeScript** yang menangan
 ## 1. Fitur Utama
 
 - **Otentikasi Otomatis (OAuth2)**: Login otomatis saat startup dan pembaruan token (*auto refresh*) otomatis 24 jam sebelum masa berlaku habis.
-- **Enriched Lock Query**: Pengambilan daftar lockbox dengan status waktu buka kunci terakhir secara realtime.
+- **Enriched Lock & Signal Telemetry**: Pengambilan daftar lockbox dengan status waktu buka kunci terakhir, agregasi sinyal RSSI terbaik, dan status gateway online secara realtime via `/api/locks/enriched`.
+- **Fast Lock Query**: Endpoint ringan `/api/locks` untuk pencarian autocomplete instan tanpa latensi enrichment.
 - **Offline Passcode Generator**: Pembuatan One-Time PIN (6 jam) secara offline via endpoint `/api/locks/:id/passcode`.
 - **Remote Unlock Gateway**: Pengiriman instruksi buka kunci jarak jauh ke Gateway WiFi via endpoint `/api/locks/:id/unlock`.
-- **Topology & Single-Flight Cache**: Cache memory 5 detik untuk data topologi gateway demi menghindari throttling API TTLOCK.
+- **Topology & Single-Flight Cache**: Cache memory 30 detik untuk data topologi gateway demi menghindari throttling API TTLOCK.
+- **Fail-Fast Validation**: Memvalidasi environment variables `TTLOCK_*` secara ketat saat booting, mencegah silent failure.
 
 ---
 

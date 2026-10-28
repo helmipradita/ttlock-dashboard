@@ -21,7 +21,36 @@ interface TopologyCacheEntry {
   expiresAt: number;
 }
 
-const TOPOLOGY_CACHE_TTL_MS = 5 * 1000;
+export interface RawLock {
+  lockId: number;
+  lockName: string;
+  lockAlias: string;
+  lockMac: string;
+  electricQuantity: number;
+  hasGateway: number;
+  [key: string]: any;
+}
+
+export interface EnrichedLock extends RawLock {
+  lastOpen: number | null;
+  rssi: number | null;
+  rssiUpdateDate: number | null;
+  gatewayId: number | null;
+  gatewayName: string | null;
+  networkName: string | null;
+  gatewayIsOnline: number | null;
+}
+
+export interface GatewaySignalEntry {
+  rssi: number;
+  rssiUpdateDate: number;
+  gatewayId: number;
+  gatewayName: string;
+  networkName: string;
+  gatewayIsOnline: number;
+}
+
+const TOPOLOGY_CACHE_TTL_MS = 30 * 1000;
 const CONCURRENCY_LIMIT = 5;
 
 export const TTLOCK_ERROR_CODES: Record<number, string> = {
@@ -262,8 +291,49 @@ class TTLockService {
     return Date.now() < entry.expiresAt;
   }
 
-  async getEnrichedLocks(): Promise<{ list: any[] }> {
-    const allLocks = await this.getAllLockList();
+  async getEnrichedLocks(): Promise<{ list: EnrichedLock[] }> {
+    // 1. Fetch locks and all gateways in parallel
+    const [allLocks, allGateways] = await Promise.all([
+      this.getAllLockList(),
+      this.getAllGatewayList().catch(() => []),
+    ]);
+
+    // 2. Fetch gateway topologies in parallel (uses topologyCache) to aggregate lock signals
+    const topologies = await Promise.all(
+      allGateways.map((gw: any) =>
+        this.getGatewayTopology(String(gw.gatewayId)).catch(() => null)
+      )
+    );
+
+    // 3. Map lockId -> best RSSI (highest dBm if lock is heard by multiple gateways)
+    const signalMap = new Map<number, GatewaySignalEntry>();
+    for (const topo of topologies) {
+      if (!topo?.locks) continue;
+      const gwOnline = topo.gateway?.isOnline === 1;
+      const gwId = topo.gateway?.gatewayId;
+      const gwName = topo.gateway?.gatewayName || "";
+      const netName = topo.gateway?.networkName || "";
+      for (const l of topo.locks) {
+        if (l.rssi == null) continue;
+        const prev = signalMap.get(l.lockId);
+        // Prioritize online gateways; if both online or both offline, compare RSSI
+        const shouldReplace =
+          !prev ||
+          (gwOnline && prev.gatewayIsOnline === 0) ||
+          (gwOnline === (prev.gatewayIsOnline === 1) && l.rssi > prev.rssi);
+
+        if (shouldReplace) {
+          signalMap.set(l.lockId, {
+            rssi: l.rssi,
+            rssiUpdateDate: l.updateDate,
+            gatewayId: gwId,
+            gatewayName: gwName,
+            networkName: netName,
+            gatewayIsOnline: topo.gateway?.isOnline ?? 0,
+          });
+        }
+      }
+    }
 
     const fetchLastOpen = async (lockId: string): Promise<number | null> => {
       try {
@@ -282,13 +352,23 @@ class TTLockService {
       }
     };
 
-    const results: any[] = [];
+    const results: EnrichedLock[] = [];
     for (let i = 0; i < allLocks.length; i += CONCURRENCY_LIMIT) {
       const batch = allLocks.slice(i, i + CONCURRENCY_LIMIT);
       const batchResults = await Promise.all(
         batch.map(async (lock) => {
           const lastOpen = await fetchLastOpen(lock.lockId);
-          return { ...lock, lastOpen };
+          const signal = signalMap.get(lock.lockId);
+          return {
+            ...lock,
+            lastOpen,
+            rssi: signal?.rssi ?? null,
+            rssiUpdateDate: signal?.rssiUpdateDate ?? null,
+            gatewayId: signal?.gatewayId ?? null,
+            gatewayName: signal?.gatewayName ?? null,
+            networkName: signal?.networkName ?? null,
+            gatewayIsOnline: signal?.gatewayIsOnline ?? (lock.hasGateway === 1 ? 0 : null),
+          };
         }),
       );
       results.push(...batchResults);
@@ -348,7 +428,7 @@ class TTLockService {
         startDate: now.toString(),
       });
 
-      console.log(`[TTLock] Passcode response for lock ${lockId}:`, raw);
+      console.log(`[TTLock] Passcode generated for lock ${lockId}, status: ${raw.errcode ?? 0}`);
 
       if (raw.errcode && raw.errcode !== 0) {
         return {

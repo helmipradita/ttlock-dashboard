@@ -31,7 +31,6 @@ const NODE_W = 110;
 const NODE_H = 50;
 const LOCK_W = 90;
 const LOCK_H = 40;
-const GW_COLOR = "#6366f1";
 
 function isDarkMode(): boolean {
   return typeof document !== "undefined" && document.documentElement.classList.contains("dark");
@@ -160,12 +159,14 @@ export function applyTopologyData(
     if (existing) {
       existing.rssi = l.rssi;
       existing.label = lockLabel;
+      existing.online = gw.isOnline;
     } else {
       s.nodes.push({
         id,
         type: "lock",
         label: lockLabel,
         rssi: l.rssi,
+        online: gw.isOnline,
         x: 0,
         y: 0,
       });
@@ -250,21 +251,21 @@ function drawGrid(
 function drawGatewayNode(ctx: CanvasRenderingContext2D, node: TopoNode) {
   const x = node.x - NODE_W / 2;
   const y = node.y - NODE_H / 2;
-  ctx.shadowColor =
-    node.online === 1 ? "rgba(99,102,241,0.4)" : "rgba(0,0,0,0.3)";
-  ctx.shadowBlur = 12;
   ctx.beginPath();
-  ctx.roundRect(x, y, NODE_W, NODE_H, 10);
-  ctx.fillStyle = node.online === 1 ? GW_COLOR : "#64748b";
+  ctx.roundRect(x, y, NODE_W, NODE_H, 6);
+  ctx.fillStyle = node.online === 1 ? (isDarkMode() ? "#18181b" : "#0f172a") : "#3f3f46";
   ctx.fill();
-  ctx.shadowBlur = 0;
+  ctx.lineWidth = 1.5;
+  ctx.strokeStyle = node.online === 1 ? "#0284c7" : "#71717a";
+  ctx.stroke();
+
   ctx.fillStyle = "white";
-  ctx.font = "bold 12px -apple-system, sans-serif";
+  ctx.font = "bold 12px 'Geist Variable', -apple-system, sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText(node.label, node.x, node.y - 6);
-  ctx.font = "10px -apple-system, sans-serif";
-  ctx.globalAlpha = 0.7;
+  ctx.font = "10px 'Geist Variable', -apple-system, sans-serif";
+  ctx.globalAlpha = 0.75;
   ctx.fillText(node.sublabel || "Gateway", node.x, node.y + 10);
   ctx.globalAlpha = 1;
 }
@@ -273,7 +274,8 @@ function drawLockNode(ctx: CanvasRenderingContext2D, node: TopoNode) {
   const colors = getThemeColors();
   const x = node.x - LOCK_W / 2;
   const y = node.y - LOCK_H / 2;
-  const color = rssiColor(node.rssi);
+  const isOnline = node.online !== 0;
+  const color = isOnline ? rssiColor(node.rssi) : "#64748b";
   ctx.shadowColor = isDarkMode() ? "rgba(0,0,0,0.4)" : "rgba(0,0,0,0.08)";
   ctx.shadowBlur = 6;
   ctx.beginPath();
@@ -285,15 +287,15 @@ function drawLockNode(ctx: CanvasRenderingContext2D, node: TopoNode) {
   ctx.stroke();
   ctx.shadowBlur = 0;
   ctx.fillStyle = colors.lockText;
-  ctx.font = "bold 11px -apple-system, sans-serif";
+  ctx.font = "bold 11px 'Geist Variable', -apple-system, sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   const display =
     node.label.length > 13 ? node.label.slice(0, 12) + "…" : node.label;
   ctx.fillText(display, node.x, node.y - 5);
-  ctx.font = "9px -apple-system, sans-serif";
+  ctx.font = "10px 'Geist Variable', -apple-system, sans-serif";
   ctx.fillStyle = color;
-  ctx.fillText(rssiLabelShort(node.rssi), node.x, node.y + 10);
+  ctx.fillText(isOnline ? rssiLabelShort(node.rssi) : "GW Offline", node.x, node.y + 10);
 }
 
 function drawFrame(
@@ -323,13 +325,18 @@ function drawFrame(
     const src = state.nodes.find((n) => n.id === edge.source);
     const tgt = state.nodes.find((n) => n.id === edge.target);
     if (!src || !tgt) continue;
-    const color = rssiColor(edge.rssi);
+    const isEdgeOnline = src.online !== 0 && tgt.online !== 0;
+    const color = isEdgeOnline ? rssiColor(edge.rssi) : "#64748b";
     ctx.beginPath();
-    ctx.setLineDash([8, 6]);
-    ctx.lineDashOffset = state.dashOffset;
+    if (isEdgeOnline) {
+      ctx.setLineDash([8, 6]);
+      ctx.lineDashOffset = state.dashOffset;
+    } else {
+      ctx.setLineDash([4, 4]);
+    }
     ctx.strokeStyle = color;
-    ctx.lineWidth = 2;
-    ctx.globalAlpha = 0.7;
+    ctx.lineWidth = isEdgeOnline ? 2 : 1;
+    ctx.globalAlpha = isEdgeOnline ? 0.7 : 0.35;
     ctx.moveTo(src.x, src.y);
     ctx.lineTo(tgt.x, tgt.y);
     ctx.stroke();
@@ -339,8 +346,8 @@ function drawFrame(
     // Label
     const mx = (src.x + tgt.x) / 2;
     const my = (src.y + tgt.y) / 2;
-    const text = `${edge.rssi ?? "?"}dB`;
-    ctx.font = "11px -apple-system, sans-serif";
+    const text = isEdgeOnline ? `${edge.rssi ?? "?"}dB` : "Offline";
+    ctx.font = "11px 'Geist Variable', -apple-system, sans-serif";
     const tw = ctx.measureText(text).width + 10;
     ctx.fillStyle = colors.edgeBg;
     ctx.beginPath();

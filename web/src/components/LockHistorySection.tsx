@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { getLock, getLockRecords, getLockGateway, getEnrichedLocks } from "@/api/client";
+import { getLock, getLockRecords, getLockGateway, getLocks } from "@/api/client";
 import type { LockRecord } from "@/api/types";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -28,13 +28,13 @@ import {
   BatteryMedium,
   BatteryFull,
   BatteryWarning,
-  WifiOff,
   History,
   KeyRound,
   X,
   Radio,
+  Loader2,
 } from "lucide-react";
-import { StatusBadge, SignalDot, wifiIconForRssi } from "@/components/status";
+import { StatusBadge, SignalDot } from "@/components/status";
 
 interface Props {
   lockSelect?: { id: number; n: number } | null;
@@ -44,7 +44,7 @@ function BatteryIcon({ level }: { level: number | null | undefined }) {
   if (level == null) return <BatteryWarning className="w-4 h-4 text-muted-foreground" />;
   if (level <= 20) return <BatteryLow className="w-4 h-4 text-red-500" />;
   if (level <= 50) return <BatteryMedium className="w-4 h-4 text-amber-500" />;
-  return <BatteryFull className="w-4 h-4 text-green-500" />;
+  return <BatteryFull className="w-4 h-4 text-emerald-500" />;
 }
 
 export function LockHistorySection({ lockSelect }: Props) {
@@ -76,8 +76,8 @@ export function LockHistorySection({ lockSelect }: Props) {
   }, []);
 
   const allLocksQuery = useQuery({
-    queryKey: ["locks"],
-    queryFn: getEnrichedLocks,
+    queryKey: ["locks-list"],
+    queryFn: getLocks,
     staleTime: 60_000,
   });
 
@@ -112,11 +112,27 @@ export function LockHistorySection({ lockSelect }: Props) {
   });
 
   function handleSearch(targetId?: string) {
-    const id = (targetId ?? searchId).trim();
-    if (!id) return;
-    setActiveId(id);
-    setPage(1);
-    setShowDropdown(false);
+    const raw = (targetId ?? searchId).trim();
+    if (!raw) return;
+
+    if (/^\d+$/.test(raw)) {
+      setActiveId(raw);
+      setPage(1);
+      setShowDropdown(false);
+      return;
+    }
+
+    if (filteredLocks.length > 0) {
+      const best = filteredLocks[0];
+      const strId = String(best.lockId);
+      setSearchId(strId);
+      setActiveId(strId);
+      setPage(1);
+      setShowDropdown(false);
+      return;
+    }
+
+    setShowDropdown(true);
   }
 
   function handleSelectLock(id: number) {
@@ -132,19 +148,19 @@ export function LockHistorySection({ lockSelect }: Props) {
   const gw = lock?.hasGateway === 1 ? gateway : null;
 
   return (
-    <Card>
+    <Card className="overflow-visible relative z-30">
       <CardHeader>
         <CardTitle>Lock History by ID</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 overflow-visible">
         {/* Search Bar - Separated Input + Clear + Button with Autocomplete */}
-        <div ref={searchContainerRef} className="relative">
+        <div ref={searchContainerRef} className="relative z-30">
           <div className="flex gap-2 items-center">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
               <Input
                 id="lock-search"
-                placeholder="Search Lock ID, Name, or Alias (e.g. 35057430, Lockbox-01)..."
+                placeholder="Search Lock ID, Name, or Alias (press / to focus)..."
                 value={searchId}
                 onChange={(e) => {
                   setSearchId(e.target.value);
@@ -174,6 +190,65 @@ export function LockHistorySection({ lockSelect }: Props) {
                   <X className="w-3.5 h-3.5" />
                 </button>
               )}
+
+              {/* Autocomplete Dropdown - exact width of search input */}
+              {showDropdown && searchId.trim().length > 0 && (
+                <div className="absolute z-50 left-0 right-0 w-full top-full mt-1.5 bg-popover text-popover-foreground border border-border rounded-lg shadow-lg overflow-hidden max-h-72 overflow-y-auto">
+                  <div className="px-3 py-1.5 text-xs font-medium text-muted-foreground bg-muted/40 border-b border-border flex items-center justify-between">
+                    <span>Suggested Lockboxes</span>
+                    {allLocksQuery.isFetching && (
+                      <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />
+                    )}
+                  </div>
+                  {allLocksQuery.isLoading ? (
+                    <div className="p-4 text-xs text-muted-foreground text-center flex items-center justify-center gap-2">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      Loading lockboxes...
+                    </div>
+                  ) : filteredLocks.length === 0 ? (
+                    <div className="p-4 text-xs text-muted-foreground text-center">
+                      No lockbox found matching "{searchId.trim()}"
+                    </div>
+                  ) : (
+                    <div className="p-1 space-y-0.5">
+                      {filteredLocks.map((item) => (
+                        <div
+                          key={item.lockId}
+                          className="flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer hover:bg-accent transition-colors"
+                          onClick={() => handleSelectLock(item.lockId)}
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                            <div className="w-7 h-7 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                              <LockIcon className="w-3.5 h-3.5" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-medium text-sm text-foreground truncate">
+                                {item.lockAlias || item.lockName || `Lock #${item.lockId}`}
+                              </p>
+                              {item.lockAlias && item.lockName && item.lockAlias !== item.lockName && (
+                                <p className="text-xs text-muted-foreground truncate">
+                                  {item.lockName}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            {item.hasGateway === 1 && (
+                              <span className="hidden sm:inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
+                                <Radio className="w-3 h-3" />
+                                <span>Gateway</span>
+                              </span>
+                            )}
+                            <span className="tabular-nums text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded border border-border">
+                              {item.lockId}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <Button
@@ -185,51 +260,6 @@ export function LockHistorySection({ lockSelect }: Props) {
               {lockQuery.isFetching ? "Loading..." : "Search"}
             </Button>
           </div>
-
-          {/* Autocomplete Dropdown */}
-          {showDropdown && filteredLocks.length > 0 && (
-            <div className="absolute z-50 left-0 right-0 sm:right-auto sm:w-[480px] top-full mt-1.5 bg-popover text-popover-foreground border rounded-xl shadow-lg overflow-hidden max-h-72 overflow-y-auto">
-              <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground bg-muted/40 border-b">
-                Suggested Lockboxes
-              </div>
-              <div className="p-1 space-y-0.5">
-                {filteredLocks.map((item) => (
-                  <div
-                    key={item.lockId}
-                    className="flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer hover:bg-accent transition-colors"
-                    onClick={() => handleSelectLock(item.lockId)}
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0 pr-2">
-                      <div className="w-7 h-7 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                        <LockIcon className="w-3.5 h-3.5" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-medium text-sm text-foreground truncate">
-                          {item.lockAlias || item.lockName || `Lock #${item.lockId}`}
-                        </p>
-                        {item.lockAlias && item.lockName && item.lockAlias !== item.lockName && (
-                          <p className="text-xs text-muted-foreground truncate">
-                            {item.lockName}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      {item.hasGateway === 1 && (
-                        <span className="hidden sm:inline-flex items-center gap-1 text-[10px] text-green-500 bg-green-500/10 px-1.5 py-0.5 rounded">
-                          <Radio className="w-2.5 h-2.5" />
-                          Gateway
-                        </span>
-                      )}
-                      <span className="font-mono text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                        {item.lockId}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
 
         {lockQuery.isError && (
@@ -249,7 +279,7 @@ export function LockHistorySection({ lockSelect }: Props) {
                 </div>
                 <div>
                   <p className="font-semibold text-sm">{lock.lockName || lock.lockAlias}</p>
-                  <p className="text-xs text-muted-foreground font-mono">ID: {lock.lockId}</p>
+                  <p className="text-xs text-muted-foreground">ID: <span className="tabular-nums font-medium">{lock.lockId}</span></p>
                 </div>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
@@ -257,41 +287,42 @@ export function LockHistorySection({ lockSelect }: Props) {
                   variant={lock.hasGateway === 1 ? "online" : "offline"}
                   label={lock.hasGateway === 1 ? "With Gateway" : "No Gateway"}
                   size="xs"
-                  icon={lock.hasGateway === 1 ? wifiIconForRssi(gw?.rssi).Icon : WifiOff}
                 />
                 <Button
                   variant="outline"
                   size="sm"
-                  className="gap-1.5 border-primary/40 text-primary hover:bg-primary/10"
+                  className="gap-1.5 border-border shadow-none"
+                  title="Generate 6-hour offline one-time PIN for physical keypad (works without gateway/internet)"
                   onClick={() => setPasscodeOpen(true)}
                 >
                   <KeyRound className="w-3.5 h-3.5" />
-                  Get PIN
+                  <span>Get PIN</span>
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="gap-1.5"
+                  className="gap-1.5 border-border shadow-none"
+                  title="Send instant remote unlock command over connected WiFi gateway"
                   onClick={() => setUnlockOpen(true)}
                 >
                   <LockIcon className="w-3.5 h-3.5" />
-                  Unlock
+                  <span>Unlock</span>
                 </Button>
               </div>
             </div>
 
             {/* Lock Info */}
             <div>
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-                Lock Info
+              <h4 className="text-xs font-medium text-muted-foreground mb-2">
+                Lockbox Telemetry
               </h4>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-muted/30 rounded-lg p-4 text-sm">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-muted/20 border border-border rounded-lg p-3.5 text-xs">
                 <InfoItem label="Name" value={lock.lockName} />
                 <InfoItem label="Alias" value={lock.lockAlias} />
                 <InfoItem
                   label="Battery"
                   value={
-                    <span className="inline-flex items-center gap-1.5">
+                    <span className="inline-flex items-center gap-1.5 tabular-nums">
                       <BatteryIcon level={lock.electricQuantity} />
                       <span className={battery.color}>{battery.label}</span>
                     </span>
@@ -305,20 +336,29 @@ export function LockHistorySection({ lockSelect }: Props) {
             </div>
 
             {/* Gateway */}
-            <div className="rounded-lg p-4 border-l-4 border-l-primary bg-muted/30">
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-                Gateway
+            <div className="rounded-lg p-3.5 border border-border bg-muted/20">
+              <h4 className="text-xs font-medium text-muted-foreground mb-2">
+                Linked Gateway
               </h4>
               {gw ? (
-                <div className="flex flex-wrap items-center gap-4 text-sm">
+                <div className="flex flex-wrap items-center gap-4 text-xs">
+                  {gw.gatewayName && (
+                    <span>
+                      <span className="font-medium text-muted-foreground mr-1">Gateway:</span>
+                      <span className="font-medium text-foreground">{gw.gatewayName}</span>
+                    </span>
+                  )}
                   <span>
-                    <strong>ID:</strong> {gw.gatewayId}
+                    <span className="font-medium text-muted-foreground mr-1">ID:</span>
+                    <span className="tabular-nums font-medium">{gw.gatewayId}</span>
                   </span>
                   <span>
-                    <strong>MAC:</strong> {gw.gatewayMac || "-"}
+                    <span className="font-medium text-muted-foreground mr-1">MAC:</span>
+                    <span>{gw.gatewayMac || "—"}</span>
                   </span>
                   <span>
-                    <strong>WiFi:</strong> {gw.networkName || "-"}
+                    <span className="font-medium text-muted-foreground mr-1">WiFi:</span>
+                    <span>{gw.networkName || "—"}</span>
                   </span>
                   <StatusBadge
                     variant={gw.isOnline === 1 ? "online" : "offline"}
@@ -326,13 +366,17 @@ export function LockHistorySection({ lockSelect }: Props) {
                     size="xs"
                   />
                   {gw.rssi != null && (
-                    <SignalDot rssi={gw.rssi} />
+                    <SignalDot
+                      rssi={gw.rssi}
+                      rssiUpdateDate={gw.rssiUpdateDate}
+                      gatewayIsOnline={gw.isOnline}
+                    />
                   )}
                 </div>
               ) : lock.hasGateway === 0 ? (
-                <p className="text-sm text-muted-foreground italic">No Gateway Connected</p>
+                <p className="text-xs text-muted-foreground">No gateway associated (Offline BLE mode only)</p>
               ) : (
-                <p className="text-sm text-muted-foreground italic">Gateway info unavailable</p>
+                <p className="text-xs text-muted-foreground">Gateway information unavailable</p>
               )}
             </div>
 
@@ -342,20 +386,21 @@ export function LockHistorySection({ lockSelect }: Props) {
                 <h4 className="flex items-center gap-2 text-sm font-semibold mb-3">
                   <History className="w-4 h-4 text-muted-foreground" />
                   Unlock History
-                  <span className="text-muted-foreground font-normal text-xs">
+                  <span className="text-muted-foreground font-normal text-xs tabular-nums">
                     ({records.total} records)
                   </span>
                 </h4>
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-muted/30">
-                      <TableHead className="w-12 text-center text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">#</TableHead>
-                      <TableHead className="whitespace-nowrap text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">Time</TableHead>
-                      <TableHead className="whitespace-nowrap text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">Method</TableHead>
-                      <TableHead className="whitespace-nowrap text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">Operator</TableHead>
-                      <TableHead className="w-24 text-right text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
+                <div className="rounded border border-border overflow-hidden">
+                  <Table containerClassName="max-h-72 overflow-auto">
+                    <TableHeader className="sticky top-0 z-20 bg-card shadow-[0_1px_0_0_var(--border)]">
+                      <TableRow className="bg-muted/40 border-b border-border">
+                        <TableHead className="w-12 text-center text-xs font-medium text-muted-foreground bg-card">#</TableHead>
+                        <TableHead className="whitespace-nowrap text-xs font-medium text-muted-foreground bg-card">Timestamp</TableHead>
+                        <TableHead className="whitespace-nowrap text-xs font-medium text-muted-foreground bg-card">Method</TableHead>
+                        <TableHead className="whitespace-nowrap text-xs font-medium text-muted-foreground bg-card">Operator</TableHead>
+                        <TableHead className="w-24 text-right text-xs font-medium text-muted-foreground bg-card">Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
                   <TableBody>
                     {records.list.map((r: LockRecord, i: number) => (
                       <TableRow key={r.recordId}>
@@ -376,6 +421,7 @@ export function LockHistorySection({ lockSelect }: Props) {
                     ))}
                   </TableBody>
                 </Table>
+                </div>
 
                 {records.pages > 1 && (
                   <div className="flex gap-1 justify-center flex-wrap mt-3">
@@ -385,7 +431,7 @@ export function LockHistorySection({ lockSelect }: Props) {
                       disabled={page <= 1}
                       onClick={() => setPage((p) => p - 1)}
                     >
-                      ‹ Prev
+                      Previous
                     </Button>
                     {Array.from({ length: Math.min(records.pages, 9) }, (_, i) => {
                       let pageNum: number;
@@ -422,7 +468,7 @@ export function LockHistorySection({ lockSelect }: Props) {
                       disabled={page >= records.pages}
                       onClick={() => setPage((p) => p + 1)}
                     >
-                      Next ›
+                      Next
                     </Button>
                   </div>
                 )}
@@ -475,10 +521,10 @@ function InfoItem({
 }) {
   return (
     <div>
-      <dt className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1">
+      <dt className="text-xs text-muted-foreground mb-1">
         {label}
       </dt>
-      <dd className="text-sm font-medium">{value || "-"}</dd>
+      <dd className="text-xs font-medium text-foreground">{value || "—"}</dd>
     </div>
   );
 }

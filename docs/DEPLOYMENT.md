@@ -16,16 +16,19 @@ cp backend/.env.example backend/.env
 Isi variabel sesuai akun TTLOCK Developer Anda:
 ```env
 # ID Aplikasi dari TTLOCK Developer Portal (https://open.ttlock.com)
-CLIENT_ID=your_client_id
+TTLOCK_CLIENT_ID="your_client_id"
 
 # Secret Aplikasi dari TTLOCK Developer Portal
-CLIENT_SECRET=your_client_secret
+TTLOCK_CLIENT_SECRET="your_client_secret"
 
 # Username / Email akun TTLOCK APP
-USERNAME=your_ttlock_account@domain.com
+TTLOCK_USERNAME="your_ttlock_account@domain.com"
 
 # Password akun TTLOCK dalam format MD5 Hash (huruf kecil)
-PASSWORD=your_md5_hashed_password
+TTLOCK_PASSWORD_MD5="your_md5_hashed_password"
+
+# URL Base API TTLOCK (opsional, default: https://api.sciener.com)
+TTLOCK_API_BASE_URL="https://api.sciener.com"
 
 # Port internal server (opsional, default: 5757 lokal / 5000 di docker)
 PORT=5757
@@ -43,19 +46,19 @@ Jika Anda hanya ingin langsung memakai aplikasi di server atau komputer lokal ta
    ```yaml
    services:
      backend:
-       image: helmipradita/ttlock-backend:latest
+       image: ghcr.io/helmipradita/ttlock-backend:latest
        environment:
-         - CLIENT_ID=your_client_id
-         - CLIENT_SECRET=your_client_secret
-         - USERNAME=your_ttlock_email
-         - PASSWORD=your_md5_password
+         - TTLOCK_CLIENT_ID=your_client_id
+         - TTLOCK_CLIENT_SECRET=your_client_secret
+         - TTLOCK_USERNAME=your_ttlock_email
+         - TTLOCK_PASSWORD_MD5=your_md5_password
          - PORT=5000
        expose:
          - "5000"
        restart: unless-stopped
 
      web-nginx:
-       image: helmipradita/ttlock-web-nginx:latest
+       image: ghcr.io/helmipradita/ttlock-web-nginx:latest
        ports:
          - "5757:5757"
        depends_on:
@@ -81,17 +84,17 @@ docker network create ttlock-net
 
 # 2. Jalankan Backend Container
 docker run -d --name ttlock-backend --network ttlock-net \
-  -e CLIENT_ID="your_client_id" \
-  -e CLIENT_SECRET="your_client_secret" \
-  -e USERNAME="your_ttlock_email" \
-  -e PASSWORD="your_md5_password" \
+  -e TTLOCK_CLIENT_ID="your_client_id" \
+  -e TTLOCK_CLIENT_SECRET="your_client_secret" \
+  -e TTLOCK_USERNAME="your_ttlock_email" \
+  -e TTLOCK_PASSWORD_MD5="your_md5_password" \
   -e PORT="5000" \
-  helmipradita/ttlock-backend:latest
+  ghcr.io/helmipradita/ttlock-backend:latest
 
 # 3. Jalankan Web Nginx Frontend Container
 docker run -d --name ttlock-web --network ttlock-net \
   -p 5757:5757 \
-  helmipradita/ttlock-web-nginx:latest
+  ghcr.io/helmipradita/ttlock-web-nginx:latest
 ```
 
 ---
@@ -148,7 +151,7 @@ Pengaturan batas resource pada `docker-compose.yml`:
 ## 5. Troubleshooting Umum
 
 1. **Error: Invalid Client / Invalid Account (-10001, -10007)**:
-   - Pastikan nilai `CLIENT_ID`, `CLIENT_SECRET`, dan `PASSWORD` MD5 di `backend/.env` sudah benar dan tidak ada spasi di ujung teks.
+   - Pastikan nilai `TTLOCK_CLIENT_ID`, `TTLOCK_CLIENT_SECRET`, `TTLOCK_USERNAME`, dan `TTLOCK_PASSWORD_MD5` di `backend/.env` sudah benar dan tidak ada spasi di ujung teks.
 2. **Error: Remote unlock not enabled (-4043)**:
    - Buka aplikasi TTLOCK di smartphone $\rightarrow$ Pilih Lockbox $\rightarrow$ Settings $\rightarrow$ Aktifkan fitur *Remote Unlock*.
 3. **Port 5757 bentrok**:

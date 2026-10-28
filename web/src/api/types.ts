@@ -14,6 +14,12 @@ export interface Lock {
   electricQuantity: number;
   lastOpen: number | null;
   hasGateway: number;
+  rssi?: number | null;
+  rssiUpdateDate?: number | null;
+  gatewayId?: number | null;
+  gatewayName?: string | null;
+  networkName?: string | null;
+  gatewayIsOnline?: number | null;
 }
 
 export interface LockRecord {
@@ -34,6 +40,7 @@ export interface LockRecordsResponse {
 
 export interface GatewayInfo {
   gatewayId: number;
+  gatewayName?: string;
   gatewayMac: string;
   gatewayVersion: number;
   networkName: string;

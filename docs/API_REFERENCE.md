@@ -15,7 +15,7 @@ Mengecek status autentikasi token TTLOCK saat ini.
   "authenticated": true,
   "uid": 1234567,
   "expiresAt": "2026-12-08T03:56:40.900Z",
-  "scope": "app",
+  "scope": "user,key,room",
   "username": "user@example.com"
 }
 ```
@@ -25,7 +25,7 @@ Mengecek status autentikasi token TTLOCK saat ini.
 ## 2. Endpoint Lockbox
 
 ### `GET /api/locks/enriched`
-Mengambil seluruh daftar lockbox yang diperkaya dengan data waktu pembukaan terakhir (`lastOpen`).
+Mengambil seluruh daftar lockbox yang diperkaya dengan data waktu pembukaan terakhir (`lastOpen`), kekuatan sinyal gateway terbaik (`rssi`), waktu scan sinyal (`rssiUpdateDate`), serta status gateway terkait (`gatewayIsOnline`, `gatewayId`, `gatewayName`, `networkName`).
 
 **Respon Contoh:**
 ```json
@@ -34,11 +34,17 @@ Mengambil seluruh daftar lockbox yang diperkaya dengan data waktu pembukaan tera
     {
       "lockId": 26136614,
       "lockName": "K3BLE_b27fff",
-      "lockAlias": "Lockbox-025",
+      "lockAlias": "Dev Lockbox",
       "lockMac": "78:36:63:FF:7F:B2",
-      "electricQuantity": 25,
+      "electricQuantity": 20,
       "hasGateway": 1,
-      "lastOpen": 1790573929000
+      "lastOpen": 1793066951000,
+      "rssi": -82,
+      "rssiUpdateDate": 1793071899000,
+      "gatewayId": 1902010,
+      "gatewayName": "DEV SHARECAR",
+      "networkName": "SHARECAR",
+      "gatewayIsOnline": 1
     }
   ]
 }
@@ -46,13 +52,39 @@ Mengambil seluruh daftar lockbox yang diperkaya dengan data waktu pembukaan tera
 
 ---
 
-### `GET /api/locks/:lockId`
-Mengambil rincian spesifikasi lockbox (firmware, hardware, battery, feature value, dll).
+### `GET /api/locks`
+Mengambil daftar seluruh lockbox secara cepat (*fast endpoint*) tanpa query `lastOpen` dan sinyal gateway. Digunakan khusus oleh komponen **Autocomplete Search** agar pencarian instan dan responsif.
+
+**Respon Contoh:**
+```json
+{
+  "list": [
+    {
+      "lockId": 26136614,
+      "lockName": "K3BLE_b27fff",
+      "lockAlias": "Dev Lockbox",
+      "lockMac": "78:36:63:FF:7F:B2",
+      "electricQuantity": 20,
+      "hasGateway": 1
+    }
+  ],
+  "total": 84
+}
+```
 
 ---
 
-### `GET /api/locks/:lockId/records?pageNo=1&pageSize=20`
+### `GET /api/locks/:lockId`
+Mengambil rincian spesifikasi lengkap satu lockbox (firmware, model, hardware, battery, feature value, passage mode, dll).
+
+---
+
+### `GET /api/locks/:lockId/records?pageNo=1&pageSize=10`
 Mengambil riwayat log pembukaan lockbox secara paginated.
+
+**Parameter Query:**
+- `pageNo` (opsional, default: `1`): Nomor halaman.
+- `pageSize` (opsional, default: `10`): Jumlah log per halaman.
 
 **Respon Contoh:**
 ```json
@@ -67,52 +99,63 @@ Mengambil riwayat log pembukaan lockbox secara paginated.
     }
   ],
   "total": 45,
-  "pages": 3,
+  "pages": 5,
   "pageNo": 1,
-  "pageSize": 20
+  "pageSize": 10
 }
 ```
 
 ---
 
 ### `GET /api/locks/:lockId/gateway`
-Mengambil daftar Gateway yang saat ini terhubung dengan Lockbox tertentu beserta kekuatan sinyal Bluetooth (RSSI).
+Mengambil informasi gateway yang terhubung ke lockbox beserta kekuatan sinyal RSSI dan waktu pembaruannya.
+
+**Respon Contoh:**
+```json
+{
+  "list": [
+    {
+      "gatewayId": 1902010,
+      "gatewayName": "DEV SHARECAR",
+      "gatewayMac": "34:34:30:BB:99:39",
+      "rssi": -82,
+      "rssiUpdateDate": 1793071899000,
+      "networkName": "SHARECAR",
+      "isOnline": 1,
+      "lockNum": 2,
+      "gatewayVersion": 2
+    }
+  ]
+}
+```
 
 ---
 
 ### `POST /api/locks/:lockId/passcode`
-Membuat **One-Time Passcode (PIN 6 Jam)** secara offline menggunakan algoritma TTLOCK (`keyboardPwdType: 1`).
+Menghasilkan One-Time Passcode (PIN 6-10 digit) offline yang berlaku selama 6 jam dari waktu request. Passcode dihasilkan melalui algoritma sinkronisasi waktu dan **dapat digunakan langsung pada keypad fisik lockbox tanpa koneksi gateway/internet**.
 
-**Respon Sukses:**
+**Respon Contoh:**
 ```json
 {
   "ok": true,
-  "keyboardPwd": "18530547",
-  "keyboardPwdId": 120432046,
+  "keyboardPwd": "12345678",
+  "keyboardPwdId": 9876543,
   "lockId": 26136614,
   "type": 1,
   "typeName": "One-time",
   "validHours": 6,
-  "ts": "2026-10-03T07:44:19.544Z"
-}
-```
-
-**Respon Gagal:**
-```json
-{
-  "ok": false,
-  "errcode": -3,
-  "errmsg": "Invalid Parameter",
-  "human": "Invalid Parameter",
-  "lockId": 26136614,
-  "ts": "2026-10-03T07:44:19.544Z"
+  "ts": "2026-10-27T04:00:00.000Z"
 }
 ```
 
 ---
 
 ### `POST /api/locks/:lockId/unlock`
-Mengirimkan perintah pembukaan kunci jarak jauh (*remote unlock*) ke lockbox via Gateway WiFi.
+Mengirimkan perintah pembukaan kunci jarak jauh (*remote unlock*) ke lockbox melalui Gateway WiFi.
+
+**Syarat Eksekusi:**
+1. Lockbox terhubung ke Gateway WiFi yang sedang Online.
+2. Fitur *Remote Unlock* telah diaktifkan pada pengaturan lockbox di aplikasi TTLOCK.
 
 **Respon Sukses:**
 ```json
@@ -120,33 +163,74 @@ Mengirimkan perintah pembukaan kunci jarak jauh (*remote unlock*) ke lockbox via
   "ok": true,
   "errcode": 0,
   "errmsg": "none error message",
+  "description": null,
   "human": "Success",
   "lockId": 26136614,
-  "ts": "2026-10-03T07:44:19.544Z"
+  "ts": "2026-10-27T04:00:00.000Z"
+}
+```
+
+**Respon Gagal (Contoh Gateway Down / Not Connected):**
+```json
+{
+  "ok": false,
+  "errcode": -2012,
+  "errmsg": "Lock not connected to any Gateway",
+  "description": null,
+  "human": "Lock not connected to any Gateway",
+  "lockId": 26136614,
+  "ts": "2026-10-27T04:00:00.000Z"
 }
 ```
 
 ---
 
-## 3. Endpoint Gateway
+## 3. Endpoint Gateway & Topologi
 
 ### `GET /api/gateways`
-Mengambil seluruh daftar Gateway TTLOCK.
+Mengambil daftar seluruh gateway yang terdaftar pada akun TTLOCK.
+
+**Respon Contoh:**
+```json
+{
+  "list": [
+    {
+      "gatewayId": 1902010,
+      "gatewayName": "DEV SHARECAR",
+      "gatewayMac": "34:34:30:BB:99:39",
+      "networkName": "SHARECAR",
+      "isOnline": 1,
+      "lockNum": 2,
+      "gatewayVersion": 2
+    }
+  ]
+}
+```
 
 ---
 
 ### `GET /api/gateways/:gatewayId/topology`
-Mengambil topologi hubungan antara Gateway dengan seluruh Lockbox yang terhubung di sekitarnya beserta nilai RSSI (dichache 5 detik).
+Mengambil data topologi satu gateway beserta daftar lockbox dalam jangkauannya dan nilai sinyal RSSI masing-masing.
 
----
+> **Catatan Cache:** Hasil query endpoint ini dicache selama **30 detik** di backend untuk mencegah pembatasan kuota (*rate limiting*) API TTLOCK.
 
-## 4. Daftar Kode Error Umum TTLOCK
-
-| Kode Error | Keterangan | Tindakan Solusi |
-|---|---|---|
-| `0` | Berhasil (Success) | - |
-| `-3` | Parameter Tidak Valid | Periksa kelengkapan parameter request (`startDate`, `lockId`, dll). |
-| `-2012` | Lock tidak terhubung ke Gateway | Pastikan jarak lockbox dan gateway dalam jangkauan Bluetooth. |
-| `-4043` | Fitur Remote Unlock belum aktif | Aktifkan opsi *Remote Unlock* pada pengaturan lockbox di aplikasi mobile TTLOCK. |
-| `10003` | Token Tidak Valid / Expired | Backend akan otomatis melakukan refresh token. |
-| `10007` | Akun / Password Salah | Periksa kredensial pada file `backend/.env`. |
+**Respon Contoh:**
+```json
+{
+  "gateway": {
+    "gatewayId": 1902010,
+    "gatewayName": "DEV SHARECAR",
+    "networkName": "SHARECAR",
+    "isOnline": 1
+  },
+  "locks": [
+    {
+      "lockId": 26136614,
+      "lockName": "K3BLE_b27fff",
+      "lockAlias": "Dev Lockbox",
+      "rssi": -82,
+      "updateDate": 1793071899000
+    }
+  ]
+}
+```

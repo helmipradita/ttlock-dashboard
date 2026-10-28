@@ -1,15 +1,16 @@
 import type { LucideIcon } from "lucide-react";
-import { WifiHigh, Wifi, WifiLow, WifiZero, WifiOff } from "lucide-react";
+import { WifiHigh, Wifi, WifiLow, WifiZero, WifiOff, Clock } from "lucide-react";
+import { relativeTime } from "@/lib/format";
 
 type StatusVariant = "online" | "offline" | "success" | "failed" | "warning" | "default";
 
-const VARIANT_STYLES: Record<StatusVariant, { dot: string; bg: string; text: string }> = {
-  online:   { dot: "bg-green-500 shadow-[0_0_6px_rgba(34,197,94,0.6)]",  bg: "bg-green-500/10",  text: "text-green-700" },
-  offline:  { dot: "bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.6)]",    bg: "bg-red-500/10",    text: "text-red-700" },
-  success:  { dot: "bg-green-500 shadow-[0_0_6px_rgba(34,197,94,0.6)]",  bg: "bg-green-500/10",  text: "text-green-700" },
-  failed:   { dot: "bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.6)]",    bg: "bg-red-500/10",    text: "text-red-700" },
-  warning:  { dot: "bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.6)]", bg: "bg-amber-500/10",  text: "text-amber-700" },
-  default:  { dot: "bg-gray-400",                                         bg: "bg-gray-400/10",   text: "text-gray-600" },
+const VARIANT_STYLES: Record<StatusVariant, { dot: string; bg: string; text: string; border: string }> = {
+  online:  { dot: "bg-emerald-500", bg: "bg-emerald-500/10", text: "text-emerald-700 dark:text-emerald-400", border: "border-emerald-500/30" },
+  offline: { dot: "bg-red-500",     bg: "bg-red-500/10",     text: "text-red-700 dark:text-red-400",         border: "border-red-500/30" },
+  success: { dot: "bg-emerald-500", bg: "bg-emerald-500/10", text: "text-emerald-700 dark:text-emerald-400", border: "border-emerald-500/30" },
+  failed:  { dot: "bg-red-500",     bg: "bg-red-500/10",     text: "text-red-700 dark:text-red-400",         border: "border-red-500/30" },
+  warning: { dot: "bg-amber-500",   bg: "bg-amber-500/10",   text: "text-amber-700 dark:text-amber-400",     border: "border-amber-500/30" },
+  default: { dot: "bg-zinc-400",    bg: "bg-zinc-500/10",    text: "text-zinc-600 dark:text-zinc-400",       border: "border-border" },
 };
 
 export function StatusBadge({
@@ -25,16 +26,16 @@ export function StatusBadge({
 }) {
   const s = VARIANT_STYLES[variant];
   const sizeClasses = size === "xs"
-    ? "px-1.5 py-0.5 text-[10px] gap-1"
-    : "px-2 py-0.5 text-[11px] gap-1.5";
+    ? "px-1.5 py-0.5 text-xs gap-1"
+    : "px-2 py-0.5 text-xs gap-1.5";
 
   return (
     <span
-      className={`inline-flex items-center font-medium rounded-full ${s.bg} ${s.text} ${sizeClasses}`}
+      className={`inline-flex items-center font-medium rounded-[4px] border ${s.border} ${s.bg} ${s.text} ${sizeClasses}`}
     >
       <span className={`w-1.5 h-1.5 rounded-full ${s.dot} shrink-0`} />
       {Icon && <Icon className="w-2.5 h-2.5 shrink-0" />}
-      {label}
+      <span>{label}</span>
     </span>
   );
 }
@@ -44,7 +45,7 @@ export function wifiIconForRssi(rssi: number | null | undefined): {
   color: string;
 } {
   if (rssi == null) return { Icon: WifiZero, color: "text-muted-foreground" };
-  if (rssi > -75) return { Icon: WifiHigh, color: "text-green-500" };
+  if (rssi > -75) return { Icon: WifiHigh, color: "text-emerald-500" };
   if (rssi > -85) return { Icon: Wifi, color: "text-amber-500" };
   return { Icon: WifiLow, color: "text-red-500" };
 }
@@ -53,31 +54,72 @@ export function wifiIconForOnline(isOnline: number | null | undefined): {
   Icon: LucideIcon;
   color: string;
 } {
-  if (isOnline === 1) return { Icon: WifiHigh, color: "text-green-500" };
+  if (isOnline === 1) return { Icon: WifiHigh, color: "text-emerald-500" };
   if (isOnline === 0) return { Icon: WifiOff, color: "text-muted-foreground" };
   return { Icon: WifiZero, color: "text-muted-foreground" };
 }
 
-export function SignalDot({ rssi, size = "sm" }: { rssi: number | null; size?: "xs" | "sm" }) {
-  if (rssi == null) {
+export function SignalDot({
+  rssi,
+  rssiUpdateDate,
+  gatewayIsOnline = 1,
+  size = "sm",
+}: {
+  rssi: number | null | undefined;
+  rssiUpdateDate?: number | null;
+  gatewayIsOnline?: number | null;
+  size?: "xs" | "sm";
+}) {
+  if (gatewayIsOnline === 0) {
     return (
-      <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-        <WifiZero className={size === "xs" ? "w-3 h-3" : "w-3.5 h-3.5"} />
-        — dB
+      <span
+        className="inline-flex items-center gap-1 text-xs text-muted-foreground whitespace-nowrap"
+        title="Gateway is offline: lockbox remote telemetry disconnected"
+      >
+        <WifiOff className={`${size === "xs" ? "w-3 h-3" : "w-3.5 h-3.5"} text-red-500/80 shrink-0`} />
+        <span className="text-red-600 dark:text-red-400 font-medium">GW Offline</span>
       </span>
     );
   }
+
+  if (rssi == null) {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground whitespace-nowrap">
+        <WifiZero className={size === "xs" ? "w-3 h-3" : "w-3.5 h-3.5"} />
+        <span>No signal</span>
+      </span>
+    );
+  }
+
+  // Check if signal reading is older than 15 minutes (900,000 ms)
+  const isStale = rssiUpdateDate ? Date.now() - rssiUpdateDate > 15 * 60 * 1000 : false;
+  const timeAgo = rssiUpdateDate ? relativeTime(rssiUpdateDate) : null;
 
   const { Icon, color } = wifiIconForRssi(rssi);
   const label = rssi > -75 ? "Strong" : rssi > -85 ? "Medium" : "Weak";
   const iconSize = size === "xs" ? "w-3 h-3" : "w-3.5 h-3.5";
 
+  const tooltip = rssiUpdateDate
+    ? `Signal: ${rssi} dBm (${label}) • Last scanned: ${timeAgo} (${new Date(rssiUpdateDate).toLocaleTimeString()})${isStale ? " • Stale snapshot" : ""}`
+    : `Signal: ${rssi} dBm (${label})`;
+
   return (
-    <span className="inline-flex items-center gap-1.5 text-xs text-foreground/80">
+    <span
+      className="inline-flex items-center gap-1.5 text-xs text-foreground tabular-nums whitespace-nowrap"
+      title={tooltip}
+    >
       <Icon className={`${iconSize} ${color} shrink-0`} />
-      <span>{rssi}</span>
-      <span className="text-muted-foreground">dB</span>
-      <span className="text-muted-foreground/60 hidden sm:inline">{label}</span>
+      <span>{rssi} dBm</span>
+      {isStale ? (
+        <span
+          className="inline-flex items-center text-amber-500 hover:text-amber-400 cursor-help"
+          title={tooltip}
+        >
+          <Clock className="w-3 h-3" />
+        </span>
+      ) : (
+        <span className="text-muted-foreground/60 text-[11px] hidden sm:inline">({label})</span>
+      )}
     </span>
   );
 }
