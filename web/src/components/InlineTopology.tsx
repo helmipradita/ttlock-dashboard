@@ -27,7 +27,7 @@ export function InlineTopology({
   const query = useQuery({
     queryKey: ["topology", gatewayId],
     queryFn: () => getTopology(gatewayId),
-    refetchInterval: 1000,
+    refetchInterval: false,
   });
 
   const setupCanvas = useCallback(() => {
@@ -77,35 +77,36 @@ export function InlineTopology({
   }, []);
 
   return (
-    <div className="mt-3 rounded-xl overflow-hidden border bg-card text-card-foreground shadow-sm">
+    <div className="mt-3 rounded-lg overflow-hidden border border-border bg-card text-card-foreground shadow-none">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-2.5 bg-muted/50 border-b">
-        <div className="flex items-center gap-2 text-sm">
-          <Network className="w-4 h-4 text-primary" />
-          <span className="font-semibold text-foreground">{gatewayName}</span>
-          <span className="text-xs text-muted-foreground">({lockNum} locks)</span>
-          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-green-500 bg-green-500/10 px-1.5 py-0.5 rounded-full">
-            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-            LIVE
+      <div className="flex items-center justify-between px-4 py-2 bg-muted/30 border-b border-border">
+        <div className="flex items-center gap-2 text-xs flex-wrap">
+          <Network className="w-3.5 h-3.5 text-foreground" />
+          <span className="font-medium text-foreground">{gatewayName}</span>
+          <span className="text-muted-foreground tabular-nums">({lockNum} locks)</span>
+          <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 rounded">
+            BLE link
           </span>
         </div>
         <div className="flex gap-1.5 items-center">
           <Button
             variant="outline"
             size="sm"
-            className="h-7 gap-1 text-xs"
+            className="h-6 gap-1 text-xs border-border shadow-none"
             onClick={() => instRef.current?.resetLayout()}
+            title="Reset topology node positions"
           >
             <RotateCcw className="w-3 h-3" />
-            Reset
+            <span>Reset</span>
           </Button>
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+            className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
             onClick={onClose}
+            title="Close topology view"
           >
-            <X className="w-4 h-4" />
+            <X className="w-3.5 h-3.5" />
           </Button>
         </div>
       </div>
@@ -113,11 +114,11 @@ export function InlineTopology({
       {/* Canvas area */}
       <div
         ref={wrapperRef}
-        className="relative h-96 flex items-center justify-center overflow-hidden bg-muted/10"
+        className="relative h-80 sm:h-96 flex items-center justify-center overflow-hidden bg-muted/10"
       >
         {query.isLoading && (
           <div className="flex flex-col items-center gap-2 text-muted-foreground">
-            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            <div className="w-5 h-5 border-2 border-foreground border-t-transparent rounded-full motion-safe:animate-spin" />
             <span className="text-xs">Loading topology…</span>
           </div>
         )}
@@ -125,7 +126,7 @@ export function InlineTopology({
         {query.isError && (
           <div className="flex flex-col items-center gap-2 text-red-500 text-xs">
             <span>Failed to load topology</span>
-            <span className="text-muted-foreground">{(query.error as Error)?.message}</span>
+            <span className="text-muted-foreground text-xs">{(query.error as Error)?.message}</span>
             <Button variant="outline" size="sm" onClick={() => query.refetch()} className="mt-1 h-6 text-xs">
               Retry
             </Button>
@@ -134,13 +135,14 @@ export function InlineTopology({
 
         {!query.isLoading && !query.isError && query.data && query.data.locks.length === 0 && (
           <div className="flex flex-col items-center gap-2 text-muted-foreground">
-            <Unplug className="w-5 h-5" />
-            <span className="text-xs">No locks connected</span>
+            <Unplug className="w-4 h-4" />
+            <span className="text-xs">No locks connected to this gateway</span>
           </div>
         )}
 
         <canvas
           ref={canvasRef}
+          aria-label="Interactive BLE gateway and lockbox topology map"
           className="cursor-grab rounded"
           style={{
             display: query.isLoading || query.isError || (query.data && query.data.locks.length === 0) ? "none" : "block",
@@ -150,18 +152,18 @@ export function InlineTopology({
       </div>
 
       {/* Legend */}
-      <div className="flex gap-4 px-4 py-2 bg-muted/30 border-t text-[11px] text-muted-foreground">
-        <span className="inline-flex items-center gap-1">
-          <WifiHigh className="w-3.5 h-3.5 text-green-500" />
-          Strong (&gt;-75)
+      <div className="flex gap-4 px-4 py-1.5 bg-muted/20 border-t border-border text-xs text-muted-foreground flex-wrap">
+        <span className="inline-flex items-center gap-1.5">
+          <WifiHigh className="w-3.5 h-3.5 text-emerald-500" />
+          <span>Strong <span className="tabular-nums">(&gt; -75 dBm)</span></span>
         </span>
-        <span className="inline-flex items-center gap-1">
+        <span className="inline-flex items-center gap-1.5">
           <Wifi className="w-3.5 h-3.5 text-amber-500" />
-          Medium (-75~-85)
+          <span>Medium <span className="tabular-nums">(-75 to -85 dBm)</span></span>
         </span>
-        <span className="inline-flex items-center gap-1">
+        <span className="inline-flex items-center gap-1.5">
           <WifiLow className="w-3.5 h-3.5 text-red-500" />
-          Weak (&lt;-85)
+          <span>Weak <span className="tabular-nums">(&le; -85 dBm)</span></span>
         </span>
       </div>
     </div>

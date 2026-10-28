@@ -67,6 +67,7 @@ router.get("/locks/:lockId/gateway", async (req: Request, res: Response) => {
       const details = allGateways.find((g: any) => g.gatewayId === gw.gatewayId);
       return {
         gatewayId: gw.gatewayId,
+        gatewayName: details?.gatewayName || gw.gatewayName || null,
         gatewayMac: gw.gatewayMac,
         rssi: gw.rssi,
         rssiUpdateDate: gw.rssiUpdateDate,

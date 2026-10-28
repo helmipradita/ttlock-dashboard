@@ -5,7 +5,7 @@ Monitoring and management dashboard for TTLOCK Smart Locks and Gateways. Built w
 ## Stack & Architecture
 
 - **Backend**: Express.js + TypeScript (port 5000 internal, exposed via Nginx at port 5757)
-- **Frontend**: React 19 + Vite 5.4 + TypeScript + shadcn/ui + TanStack Query + Tailwind CSS 4
+- **Frontend**: React 19 + Vite 5.4 + TypeScript + shadcn/ui + TanStack Query + Tailwind CSS 4 + jsPDF
 - **Production**: Nginx (reverse proxy `/api/*` → backend:5000 + static React build) + Node.js backend
 - **Docker**: 2 services (`backend`, `web-nginx`), 1 exposed port 5757
 
@@ -22,33 +22,38 @@ docker compose up -d --build backend     # backend only
 
 ## System Rules
 
-- Default sort: lockboxes by hasGateway desc + lastOpen desc; gateways by isOnline desc, WiFi sortable by networkName
-- RSSI signal strength: >-75 Strong (green), -85..-75 Medium (amber), <-85 Weak (red)
-- Backend cache: topology TTL 5s single-flight; lastOpen always fresh (no cache)
-- Theme: auto-detects OS `prefers-color-scheme` with manual toggle stored in `localStorage`
-- One-Time Passcode: generated offline via `/v3/keyboardPwd/get` with `keyboardPwdType: 1` (valid for 6 hours)
+- **Fail-Fast Config**: Backend strictly requires `TTLOCK_CLIENT_ID`, `TTLOCK_CLIENT_SECRET`, `TTLOCK_USERNAME`, `TTLOCK_PASSWORD_MD5`. Missing variables throw an immediate error during boot.
+- **Topology Cache**: Gateway topology is cached for 30s with single-flight request coalescing to protect TTLock API rate limits.
+- **Enriched Telemetry**: `/api/locks/enriched` maps the best gateway signal (RSSI), scan timestamp (`rssiUpdateDate`), and gateway online status.
+- **Stale Signal Rule**: Readings older than 15 minutes are flagged with an amber clock icon and descriptive snapshot tooltip.
+- **Gateway Offline Rule**: If a gateway goes down, lockbox status reflects `GW Down` / `GW Offline` instead of presenting obsolete signal numbers.
+- **Diagnostics PDF Export**: Generates client-side A4 telemetry reports via `jspdf` + `jspdf-autotable`, dynamically imported to preserve bundle efficiency.
+- **Theme**: Auto-detects OS `prefers-color-scheme` with manual toggle stored in `localStorage`.
+- **One-Time Passcode**: Generated offline via `/v3/keyboardPwd/get` with `keyboardPwdType: 1` (valid for 6 hours).
 
 ## API Endpoints
 
 | Endpoint | Method | Description |
 |---|---|---|
 | `/api/auth/status` | GET | Check current OAuth token authentication status |
-| `/api/locks/enriched` | GET | All locks with real-time last open timestamp |
-| `/api/locks` | GET | All raw locks |
+| `/api/locks/enriched` | GET | All locks with real-time last open timestamp, RSSI, and gateway online status |
+| `/api/locks` | GET | All raw locks (fast endpoint for autocomplete search) |
 | `/api/locks/:lockId` | GET | Lock detailed specifications |
 | `/api/locks/:lockId/records` | GET | Paginated unlock record logs |
 | `/api/locks/:lockId/gateway` | GET | Lock's connected gateway info and signal |
 | `/api/locks/:lockId/passcode` | POST | Generate algorithmic offline One-Time Passcode (6 hours) |
 | `/api/locks/:lockId/unlock` | POST | Remote unlock lock via WiFi Gateway |
 | `/api/gateways` | GET | All registered gateways |
-| `/api/gateways/:gatewayId/topology` | GET | Gateway topology (cached 5s) |
+| `/api/gateways/:gatewayId/topology` | GET | Gateway topology (cached 30s) |
 
 ## File Structure
 
 ```
 TTLOCK/
+├── .dockerignore
 ├── LICENSE
 ├── README.md
+├── CHANGELOG.md
 ├── AGENTS.md
 ├── docker-compose.yml
 ├── Dockerfile.backend
@@ -63,6 +68,7 @@ TTLOCK/
 ├── backend/
 │   ├── README.md
 │   ├── .gitignore
+│   ├── .env.example
 │   ├── package.json
 │   ├── tsconfig.json
 │   └── src/
@@ -85,6 +91,6 @@ TTLOCK/
         ├── api/               # client.ts, types.ts
         ├── components/        # LockHistorySection, AllLockboxesSection, PasscodeModal, UnlockTerminal, InlineTopology, etc.
         ├── hooks/             # useTheme, useCountdown
-        ├── lib/               # format.ts, utils.ts
+        ├── lib/               # format.ts, utils.ts, pdf-report.ts
         └── topology/          # topology-canvas.ts
 ```

@@ -52,15 +52,15 @@ export function relativeTime(ts: number | null): string {
 }
 
 export function batteryLevel(level: number | null | undefined): {
-  icon: string;
   color: string;
   label: string;
+  status: "critical" | "warning" | "ok" | "unknown";
 } {
-  if (level == null) return { icon: "🔋", color: "text-muted-foreground", label: "-" };
+  if (level == null) return { color: "text-muted-foreground", label: "—", status: "unknown" };
   const label = `${level}%`;
-  if (level <= 20) return { icon: "🪫", color: "text-red-500", label };
-  if (level <= 50) return { icon: "🔋", color: "text-amber-500", label };
-  return { icon: "🔋", color: "text-green-500", label };
+  if (level <= 20) return { color: "text-red-600 dark:text-red-400", label, status: "critical" };
+  if (level <= 50) return { color: "text-amber-600 dark:text-amber-400", label, status: "warning" };
+  return { color: "text-emerald-600 dark:text-emerald-400", label, status: "ok" };
 }
 
 export function rssiInfo(rssi: number | null | undefined): {
@@ -68,7 +68,7 @@ export function rssiInfo(rssi: number | null | undefined): {
   color: string;
 } {
   if (rssi == null) return { label: "-", color: "text-muted-foreground" };
-  if (rssi > -75) return { label: `${rssi} (Strong)`, color: "text-green-600" };
-  if (rssi > -85) return { label: `${rssi} (Medium)`, color: "text-amber-600" };
-  return { label: `${rssi} (Weak)`, color: "text-red-600" };
+  if (rssi > -75) return { label: `${rssi} (Strong)`, color: "text-emerald-600 dark:text-emerald-400" };
+  if (rssi > -85) return { label: `${rssi} (Medium)`, color: "text-amber-600 dark:text-amber-400" };
+  return { label: `${rssi} (Weak)`, color: "text-red-600 dark:text-red-400" };
 }

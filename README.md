@@ -1,10 +1,11 @@
 # TTLOCK Dashboard
 
-Aplikasi web modern untuk **pemantauan (monitoring) dan pengelolaan** perangkat Smart Lock & Gateway TTLOCK. Menampilkan informasi status lockbox secara realtime, riwayat pembukaan, visualisasi topologi gateway interaktif, pembuatan PIN offline, dan pembukaan kunci jarak jauh dalam satu antarmuka yang responsif.
+Aplikasi web modern untuk **pemantauan (monitoring), telemetri perangkat keras, dan pengelolaan armada** Smart Lock & Gateway TTLOCK. Menampilkan status lockbox secara realtime, riwayat pembukaan, visualisasi topologi gateway interaktif, pembuatan PIN offline, pembukaan kunci jarak jauh, dan ekspor laporan diagnostik perangkat keras dalam format PDF.
 
+[![Version](https://img.shields.io/badge/Version-1.1.0-emerald.svg)](CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
-[![Docker Hub](https://img.shields.io/badge/Docker_Hub-Images_Available-0db7ed?logo=docker&logoColor=white)](https://hub.docker.com/u/helmipradita)
+[![GHCR Packages](https://img.shields.io/badge/GHCR-Images_Available-2088FF?logo=github&logoColor=white)](https://github.com/helmipradita/ttlock-dashboard/pkgs/container/ttlock-backend)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](web/)
 [![Express](https://img.shields.io/badge/Express.js-Backend-black?logo=express)](backend/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)](web/tsconfig.json)
@@ -26,10 +27,13 @@ Aplikasi web modern untuk **pemantauan (monitoring) dan pengelolaan** perangkat 
 
 - 🔑 **Offline One-Time Passcode**: Pembuatan PIN satu kali pakai secara instan (berlaku 6 jam) berbasis algoritma sinkronisasi waktu TTLOCK tanpa membutuhkan koneksi gateway internet.
 - 🔓 **Remote Unlock**: Perintah buka kunci jarak jauh secara instan melalui Gateway WiFi yang terhubung.
-- 🌐 **Interactive Gateway Topology**: Visualisasi grafis hubungan Gateway $\leftrightarrow$ Lockbox dengan indikator kekuatan sinyal (RSSI), animasi realtime, dan kanvas interaktif (pan, zoom, drag).
-- 🔍 **Pencarian Cerdas & Autocomplete**: Pencarian cepat instan dengan dropdown interaktif berdasarkan Lock ID, Nama Lockbox, dan Alias Lockbox.
-- 🌓 **Dark & Light Mode**: Deteksi otomatis tema sistem operasi (OS) pengguna dengan tombol pengubah mode manual dan persistensi penyimpanan.
-- 📊 **Tabel Interaktif Multi-Sorting**: Pengurutan cerdas tabel Lockbox dan Gateway berdasarkan status online, kekuatan sinyal WiFi, nama alias, dan aktivitas buka terakhir.
+- 📄 **Hardware Diagnostics PDF Export**: Ekspor laporan telemetri hardware A4 sekali klik via `jspdf` (lazy loaded) yang merinci gateway offline, peringkat sinyal lemah (< -85 dBm), peringatan baterai, dan lockbox unlinked.
+- 📡 **Live Signal Telemetry & Stale Detection**: Deteksi kualitas sinyal RSSI per lockbox. Jika gateway offline, status otomatis menjadi `GW Offline` / `GW Down`. Snapshot sinyal > 15 menit ditandai dengan ikon jam amber dan tooltip waktu scan.
+- 🚦 **Fleet Triage Filters**: Filter cepat armada lockbox berdasarkan kondisi kritis: *All*, *Needs Attention*, *Weak Signal*, *No Gateway*, *Battery ≤ 20%*, dan *Connected*.
+- 🌐 **Interactive Gateway Topology**: Visualisasi grafis hubungan Gateway $\leftrightarrow$ Lockbox dengan indikator kekuatan sinyal (RSSI), status online/offline, animasi edge, dan kanvas interaktif (pan, zoom, drag).
+- 🔍 **Pencarian Cerdas & Autocomplete**: Pencarian cepat instan dengan endpoint berkecepatan tinggi (`/api/locks`), pintasan keyboard `/` atau `Ctrl+K`, dan pencocokan Lock ID, Nama, atau Alias.
+- 🌓 **Dark & Light Mode**: Deteksi otomatis preferensi OS pengguna dengan tombol pengubah mode manual dan persistensi `localStorage`.
+- ⚡ **Fail-Fast Environment**: Backend memvalidasi variabel `TTLOCK_*` secara ketat saat proses inisialisasi boot untuk mencegah silent failure.
 - 🔄 **Auto-Token Management**: Manajemen token OAuth2 otomatis dengan pembaruan token (*auto-refresh*) berkala 24 jam sebelum kadaluarsa.
 
 ---
@@ -41,7 +45,9 @@ graph TB
     subgraph Klien["Browser / Klien"]
         UI["React 19 SPA (Vite + TypeScript)"]
         Theme["Theme Manager (Dark / Light)"]
+        PdfGen["PDF Telemetry Generator (jsPDF)"]
         UI --- Theme
+        UI --- PdfGen
     end
 
     subgraph Docker["Docker Host (Port 5757)"]
@@ -65,7 +71,7 @@ Untuk rincian diagram data flow, sequence diagram, dan component tree lengkap, s
 
 Pilih salah satu metode yang paling sesuai dengan kebutuhan Anda:
 
-### 📦 Opsi 1: Menjalankan Langsung via Docker Hub (Tanpa Clone Source Code)
+### 📦 Opsi 1: Menjalankan Langsung via Container Image (Tanpa Clone Source Code)
 
 Cocok bagi pengguna yang hanya ingin langsung menjalankan aplikasi di server atau komputer lokal tanpa meng-compile kode sumber.
 
@@ -73,19 +79,19 @@ Cocok bagi pengguna yang hanya ingin langsung menjalankan aplikasi di server ata
    ```yaml
    services:
      backend:
-       image: helmipradita/ttlock-backend:latest
+       image: ghcr.io/helmipradita/ttlock-backend:latest
        environment:
-         - CLIENT_ID=your_client_id
-         - CLIENT_SECRET=your_client_secret
-         - USERNAME=your_ttlock_email
-         - PASSWORD=your_md5_password
+         - TTLOCK_CLIENT_ID=your_client_id
+         - TTLOCK_CLIENT_SECRET=your_client_secret
+         - TTLOCK_USERNAME=your_ttlock_email@example.com
+         - TTLOCK_PASSWORD_MD5=your_md5_password
          - PORT=5000
        expose:
          - "5000"
        restart: unless-stopped
 
      web-nginx:
-       image: helmipradita/ttlock-web-nginx:latest
+       image: ghcr.io/helmipradita/ttlock-web-nginx:latest
        ports:
          - "5757:5757"
        depends_on:
@@ -97,8 +103,6 @@ Cocok bagi pengguna yang hanya ingin langsung menjalankan aplikasi di server ata
    docker compose up -d
    ```
 3. Buka browser di **`http://localhost:5757`**.
-
-👉 **[Lihat Panduan Lengkap Docker Hub / docker run](docs/DEPLOYMENT.md#2-cara-cepat-menjalankan-langsung-via-image-docker-hub-tanpa-clone-source-code)**
 
 ---
 
@@ -113,7 +117,7 @@ cd ttlock-dashboard
 
 # 2. Siapkan file konfigurasi environment
 cp backend/.env.example backend/.env
-# Isi CLIENT_ID, CLIENT_SECRET, USERNAME, dan PASSWORD pada backend/.env
+# Isi TTLOCK_CLIENT_ID, TTLOCK_CLIENT_SECRET, TTLOCK_USERNAME, dan TTLOCK_PASSWORD_MD5 pada backend/.env
 
 # 3. Jalankan aplikasi (Otomatis build di dalam Docker)
 docker compose up -d --build
@@ -122,7 +126,7 @@ docker compose up -d --build
 # http://localhost:5757
 ```
 
-> **Tips Build:** Anda **tidak perlu** menjalankan `npm run build` lokal sebelum `docker compose up`, karena Dockerfile sudah menggunakan multi-stage build otomatis.
+> **Tips Build:** Anda **tidak perlu** menjalankan `npm run build` lokal sebelum `docker compose up`, karena Dockerfile sudah menggunakan multi-stage build otomatis dan `.dockerignore` telah dikonfigurasi optimal.
 
 ---
 
@@ -132,12 +136,11 @@ Untuk panduan mendalam dan spesifikasi teknis, kunjungi dokumen di folder `docs/
 
 | Dokumen | Deskripsi |
 |---|---|
-| 📐 [**Arsitektur Sistem**](docs/ARCHITECTURE.md) | Diagram interaksi modul, sequence diagram passcode & unlock, dan arsitektur container. |
-| 🛠️ [**Spesifikasi Tech Stack**](docs/TECH_STACK.md) | Rincian lengkap teknologi frontend, backend, UI framework, dan library yang digunakan. |
+| 📐 [**Arsitektur Sistem**](docs/ARCHITECTURE.md) | Diagram interaksi modul, sequence diagram telemetri, passcode & unlock, serta arsitektur container. |
+| 🛠️ [**Spesifikasi Tech Stack**](docs/TECH_STACK.md) | Rincian lengkap teknologi frontend, backend, PDF reporting, dan library yang digunakan. |
 | 🔌 [**Referensi API**](docs/API_REFERENCE.md) | Kontrak request & response API internal serta pemetaan kode error TTLOCK. |
-| 🚀 [**Panduan Deployment**](docs/DEPLOYMENT.md) | Konfigurasi variabel environment, tutorial Docker Hub tanpa clone, alokasi memori container, dan troubleshooting. |
-| 🖥️ [**Backend Service**](backend/README.md) | Dokumentasi teknis backend Express.js dan panduan development mandiri. |
-| 🌐 [**Frontend Application**](web/README.md) | Dokumentasi teknis frontend React dan struktur komponen antarmuka. |
+| 🚀 [**Panduan Deployment**](docs/DEPLOYMENT.md) | Konfigurasi variabel environment, alokasi memori container, dan troubleshooting. |
+| 📋 [**Catatan Perubahan (Changelog)**](CHANGELOG.md) | Riwayat rilis fitur dan perbaikan bug tiap versi. |
 
 ---
 
@@ -146,15 +149,15 @@ Untuk panduan mendalam dan spesifikasi teknis, kunjungi dokumen di folder `docs/
 | Metode | Endpoint | Deskripsi |
 |---|---|---|
 | `GET` | `/api/auth/status` | Mengecek status autentikasi OAuth2 token TTLOCK |
-| `GET` | `/api/locks/enriched` | Mengambil seluruh daftar lockbox dengan data `lastOpen` realtime |
-| `GET` | `/api/locks` | Mengambil seluruh daftar mentah lockbox |
+| `GET` | `/api/locks/enriched` | Mengambil seluruh daftar lockbox dengan data `lastOpen` realtime, RSSI, dan status gateway |
+| `GET` | `/api/locks` | Mengambil daftar cepat seluruh lockbox untuk autocomplete search |
 | `GET` | `/api/locks/:lockId` | Mengambil rincian spesifikasi teknis lockbox |
 | `GET` | `/api/locks/:lockId/records` | Mengambil log riwayat pembukaan kunci secara paginated |
 | `GET` | `/api/locks/:lockId/gateway` | Mengambil info gateway dan sinyal RSSI yang terhubung ke lockbox |
 | `POST` | `/api/locks/:lockId/passcode` | **Membuat One-Time Passcode offline (berlaku 6 jam)** |
 | `POST` | `/api/locks/:lockId/unlock` | **Mengirim perintah buka kunci jarak jauh via Gateway WiFi** |
 | `GET` | `/api/gateways` | Mengambil daftar seluruh Gateway yang terdaftar |
-| `GET` | `/api/gateways/:gatewayId/topology` | Mengambil topologi Gateway $\leftrightarrow$ Lockbox (cache 5 detik) |
+| `GET` | `/api/gateways/:gatewayId/topology` | Mengambil topologi Gateway $\leftrightarrow$ Lockbox (cache 30 detik) |
 
 ---
 

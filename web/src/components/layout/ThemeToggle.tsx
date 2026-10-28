@@ -9,15 +9,15 @@ export function ThemeToggle() {
     <Button
       variant="ghost"
       size="sm"
-      className="h-8 w-8 p-0 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+      className="h-8 w-8 p-0 text-foreground hover:bg-muted rounded-md transition-colors"
       onClick={toggleTheme}
-      title={resolvedTheme === "dark" ? "Ganti ke Light mode" : "Ganti ke Dark mode"}
+      title={resolvedTheme === "dark" ? "Switch to Light theme" : "Switch to Dark theme"}
       aria-label="Toggle theme"
     >
       {resolvedTheme === "dark" ? (
-        <Sun className="w-4 h-4 text-amber-300 transition-transform rotate-0 scale-100" />
+        <Sun className="w-4 h-4 text-amber-400 transition-transform rotate-0 scale-100" />
       ) : (
-        <Moon className="w-4 h-4 text-sky-200 transition-transform rotate-0 scale-100" />
+        <Moon className="w-4 h-4 text-foreground transition-transform rotate-0 scale-100" />
       )}
     </Button>
   );

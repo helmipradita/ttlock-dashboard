@@ -7,7 +7,10 @@ Aplikasi antarmuka web modern berbasis **React 19 + Vite 5.4 + TypeScript + Tail
 ## 1. Fitur Antarmuka
 
 - **Dark & Light Mode**: Deteksi otomatis preferensi tema sistem operasi pengguna dengan tombol toggle switcher manual dan penyimpanan state di `localStorage`.
-- **Smart Autocomplete Search**: Pencarian cepat instan dengan dropdown interaktif berdasarkan Lock ID, Lock Name, dan Lockbox Alias.
+- **Smart Autocomplete Search**: Pencarian cepat instan dengan endpoint ringan (`/api/locks`), pintasan keyboard `/` atau `Ctrl+K`, dan pencocokan Lock ID, Nama, atau Alias.
+- **Hardware Diagnostics PDF Export**: Ekspor laporan telemetri hardware sekali klik via `jspdf` + `jspdf-autotable` (lazy loaded).
+- **Fleet Triage Filters**: Filter cepat status armada (*All*, *Needs Attention*, *Weak Signal*, *No Gateway*, *Battery ≤ 20%*, *Connected*).
+- **Live Signal Telemetry**: Indikator kekuatan sinyal RSSI kompak (single-line) dengan deteksi snapshot basi (> 15m) dan peringatan gateway offline.
 - **Passcode Modal**: Dialog pembuatan One-Time Passcode offline (6 jam) dengan tampilan kode monospace besar dan tombol 1-klik copy.
 - **Remote Unlock Dialog**: Antarmuka pembukaan kunci via gateway dengan konfirmasi aman dan status respons visual.
 - **Interactive Gateway Topology**: Canvas interaktif yang menampilkan hubungan Gateway $\leftrightarrow$ Lockbox dengan pewarnaan RSSI dan kemampuan adaptasi tema gelap/terang.
@@ -35,7 +38,7 @@ web/
 │   │   ├── UnlockTerminal.tsx
 │   │   └── status.tsx
 │   ├── hooks/                 # useTheme, useCountdown
-│   ├── lib/                   # Utility formatting & styling
+│   ├── lib/                   # Utility formatting, styling, pdf-report.ts
 │   └── topology/              # Engine canvas renderer topologi
 ├── index.html
 ├── package.json
