@@ -2,7 +2,7 @@
 
 Aplikasi web modern untuk **pemantauan (monitoring), telemetri perangkat keras, dan pengelolaan armada** Smart Lock & Gateway TTLOCK. Menampilkan status lockbox secara realtime, riwayat pembukaan, visualisasi topologi gateway interaktif, pembuatan PIN offline, pembukaan kunci jarak jauh, dan ekspor laporan diagnostik perangkat keras dalam format PDF.
 
-[![Version](https://img.shields.io/badge/Version-1.1.1-emerald.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/Version-1.2.0-emerald.svg)](CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
 [![GHCR Packages](https://img.shields.io/badge/GHCR-Images_Available-2088FF?logo=github&logoColor=white)](https://github.com/helmipradita/ttlock-dashboard/pkgs/container/ttlock-backend)
@@ -19,6 +19,7 @@ Aplikasi web modern untuk **pemantauan (monitoring), telemetri perangkat keras, 
 - [Panduan Memulai Cepat (Quick Start)](#-panduan-memulai-cepat-quick-start)
 - [Dokumentasi Lengkap](#-dokumentasi-lengkap)
 - [Daftar Endpoint API](#-daftar-endpoint-api)
+- [Sponsors & Backers](#-sponsors--backers)
 - [Lisensi](#-lisensi)
 
 ---
@@ -158,6 +159,25 @@ Untuk panduan mendalam dan spesifikasi teknis, kunjungi dokumen di folder `docs/
 | `POST` | `/api/locks/:lockId/unlock` | **Mengirim perintah buka kunci jarak jauh via Gateway WiFi** |
 | `GET` | `/api/gateways` | Mengambil daftar seluruh Gateway yang terdaftar |
 | `GET` | `/api/gateways/:gatewayId/topology` | Mengambil topologi Gateway $\leftrightarrow$ Lockbox (cache 30 detik) |
+
+---
+
+## 💖 Sponsors & Backers
+
+Proyek ini didukung oleh program open-source:
+
+<table>
+  <tr>
+    <td align="center" width="220">
+      <a href="https://termius.com/" target="_blank" rel="noopener noreferrer">
+        <img src="https://raw.githubusercontent.com/helmipradita/ttlock-dashboard/main/.github/assets/termius-logo.svg" width="180" alt="Termius" />
+      </a>
+    </td>
+    <td>
+      <a href="https://termius.com/" target="_blank" rel="noopener noreferrer"><strong>Termius</strong></a> provides a secure, reliable, and collaborative SSH client and terminal console across desktop and mobile devices.
+    </td>
+  </tr>
+</table>
 
 ---
 
