@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Termius Open Source Sponsorship
+    url: https://termius.com/
+    about: Supported by the Termius for Open Source program for edge infrastructure access.
+  - name: Security Vulnerabilities
+    url: mailto:helmipraditaa@gmail.com
+    about: Please report security vulnerabilities privately via email.

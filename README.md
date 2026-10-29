@@ -174,7 +174,10 @@ This project is supported by open-source programs:
   <tr>
     <td align="center" width="220">
       <a href="https://termius.com/" target="_blank" rel="noopener noreferrer">
-        <img src="https://raw.githubusercontent.com/helmipradita/ttlock-dashboard/main/.github/assets/termius-logo.png" width="180" alt="Termius" />
+        <picture>
+          <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/helmipradita/ttlock-dashboard/main/.github/assets/termius-logo-white.png" />
+          <img src="https://raw.githubusercontent.com/helmipradita/ttlock-dashboard/main/.github/assets/termius-logo.png" width="180" alt="Termius" />
+        </picture>
       </a>
     </td>
     <td>
