@@ -50,6 +50,11 @@ docker compose up -d --build backend     # backend only
 
 ```
 TTLOCK/
+├── .github/
+│   ├── FUNDING.yml
+│   ├── assets/
+│   └── workflows/
+│       └── docker-publish.yml
 ├── .dockerignore
 ├── LICENSE
 ├── README.md
@@ -71,6 +76,8 @@ TTLOCK/
 │   ├── .env.example
 │   ├── package.json
 │   ├── tsconfig.json
+│   ├── test/
+│   │   └── ttlock.test.ts
 │   └── src/
 │       ├── config.ts
 │       ├── main.ts
@@ -83,6 +90,8 @@ TTLOCK/
     ├── package.json
     ├── vite.config.ts
     ├── index.html
+    ├── test/
+    │   └── format.test.ts
     ├── public/
     │   ├── favicon.png
     │   └── ttlock-logo.webp
