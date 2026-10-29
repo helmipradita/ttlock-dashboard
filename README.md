@@ -164,6 +164,8 @@ Detailed operational guides and technical specifications are available in the `d
 
 ---
 
+<a id="sponsors"></a>
+<a id="sponsors--backers"></a>
 ## 💖 Sponsors & Backers
 
 This project is supported by open-source programs:
