@@ -1,48 +1,48 @@
-# Panduan Deployment & Konfigurasi
+# TTLOCK Dashboard — Deployment & Operations Guide
 
-Dokumen ini menjelaskan langkah-langkah deployment, konfigurasi environment variables, alur build Docker, cara menjalankan langsung menggunakan image Docker Hub (tanpa clone repo), dan panduan troubleshooting untuk **TTLOCK Dashboard**.
+This document describes deployment options, environment variables configuration, Docker multi-stage build workflows, pre-built container execution via GitHub Container Registry (GHCR), and common troubleshooting checklists for **TTLOCK Dashboard**.
 
 ---
 
-## 1. Konfigurasi Environment Variables (`.env`)
+## 1. Environment Variables Configuration (`.env`)
 
-Konfigurasi aplikasi dikelola melalui file `backend/.env`.
+Configuration credentials are managed through `backend/.env`.
 
-Salin template konfigurasi:
+Copy the template file:
 ```bash
 cp backend/.env.example backend/.env
 ```
 
-Isi variabel sesuai akun TTLOCK Developer Anda:
+Populate the variables with your TTLOCK Developer credentials:
 ```env
-# ID Aplikasi dari TTLOCK Developer Portal (https://open.ttlock.com)
+# Application ID from TTLOCK Developer Portal (https://open.ttlock.com)
 TTLOCK_CLIENT_ID="your_client_id"
 
-# Secret Aplikasi dari TTLOCK Developer Portal
+# Application Secret from TTLOCK Developer Portal
 TTLOCK_CLIENT_SECRET="your_client_secret"
 
-# Username / Email akun TTLOCK APP
+# Username / Email of the registered TTLOCK APP account
 TTLOCK_USERNAME="your_ttlock_account@domain.com"
 
-# Password akun TTLOCK dalam format MD5 Hash (huruf kecil)
+# Password of the TTLOCK account in MD5 Hash format (lowercase hex)
 TTLOCK_PASSWORD_MD5="your_md5_hashed_password"
 
-# URL Base API TTLOCK (opsional, default: https://api.sciener.com)
+# Optional Base URL override (defaults to https://api.sciener.com)
 TTLOCK_API_BASE_URL="https://api.sciener.com"
 
-# Port internal server (opsional, default: 5757 lokal / 5000 di docker)
+# Internal server port (defaults to 5757 local / 5000 in docker)
 PORT=5757
 ```
 
 ---
 
-## 2. Cara Cepat: Menjalankan Langsung via Image Docker Hub (Tanpa Clone Source Code)
+## 2. Fast Track: Running Pre-Built Container Images (No Source Clone Required)
 
-Jika Anda hanya ingin langsung memakai aplikasi di server atau komputer lokal tanpa perlu meng-clone seluruh source code, Anda dapat menggunakan image container yang sudah di-bundle (*pre-built*) dari **Docker Hub** atau **GitHub Container Registry (GHCR)**.
+If you wish to deploy the dashboard directly without compiling or checking out source files, pre-built container images are distributed via **GitHub Container Registry (GHCR)**.
 
-### Opsi A: Menggunakan File `docker-compose.yml` Sederhana (Direkomendasikan)
+### Option A: Using a Simple `docker-compose.yml` (Recommended)
 
-1. Buat direktori baru dan buat file `docker-compose.yml`:
+1. Create a clean directory and create a `docker-compose.yml` file:
    ```yaml
    services:
      backend:
@@ -50,7 +50,7 @@ Jika Anda hanya ingin langsung memakai aplikasi di server atau komputer lokal ta
        environment:
          - TTLOCK_CLIENT_ID=your_client_id
          - TTLOCK_CLIENT_SECRET=your_client_secret
-         - TTLOCK_USERNAME=your_ttlock_email
+         - TTLOCK_USERNAME=your_ttlock_email@example.com
          - TTLOCK_PASSWORD_MD5=your_md5_password
          - PORT=5000
        expose:
@@ -66,23 +66,23 @@ Jika Anda hanya ingin langsung memakai aplikasi di server atau komputer lokal ta
        restart: unless-stopped
    ```
 
-2. Jalankan container:
+2. Start the services:
    ```bash
    docker compose up -d
    ```
-   Aplikasi akan otomatis mengunduh image dari Docker Hub dan langsung aktif di **`http://localhost:5757`**.
+   Docker automatically pulls the latest GHCR images and starts the application at **`http://localhost:5757`**.
 
 ---
 
-### Opsi B: Menggunakan Perintah `docker run` Langsung
+### Option B: Running Directly with `docker run`
 
-Jika tidak ingin membuat file konfigurasi sama sekali:
+To run without configuration files:
 
 ```bash
-# 1. Buat bridge network
+# 1. Create bridge network
 docker network create ttlock-net
 
-# 2. Jalankan Backend Container
+# 2. Run Backend Container
 docker run -d --name ttlock-backend --network ttlock-net \
   -e TTLOCK_CLIENT_ID="your_client_id" \
   -e TTLOCK_CLIENT_SECRET="your_client_secret" \
@@ -91,7 +91,7 @@ docker run -d --name ttlock-backend --network ttlock-net \
   -e PORT="5000" \
   ghcr.io/helmipradita/ttlock-backend:latest
 
-# 3. Jalankan Web Nginx Frontend Container
+# 3. Run Web Nginx Frontend Container
 docker run -d --name ttlock-web --network ttlock-net \
   -p 5757:5757 \
   ghcr.io/helmipradita/ttlock-web-nginx:latest
@@ -99,64 +99,64 @@ docker run -d --name ttlock-web --network ttlock-net \
 
 ---
 
-## 3. Menjalankan dari Source Code (Clone Repository)
+## 3. Running from Source Code (Clone Repository)
 
-Metode ini cocok bagi pengembang yang ingin mengubah kode sumber (source code):
+Best suited for developers building features or modifying components:
 
-### A. Menjalankan Seluruh Aplikasi
+### A. Full Application Build
 ```bash
 # 1. Clone repository
 git clone https://github.com/helmipradita/ttlock-dashboard.git
 cd ttlock-dashboard
 
-# 2. Siapkan file environment
+# 2. Create environment file
 cp backend/.env.example backend/.env
 
-# 3. Jalankan build & start container
+# 3. Build and launch containers
 docker compose up -d --build
 ```
-Aplikasi akan tersedia di: **`http://localhost:5757`**
+The dashboard will be accessible at: **`http://localhost:5757`**
 
-> **Catatan Teknis Build:**
-> Saat menggunakan Docker Compose, Anda **TIDAK PERLU** menjalankan `npm run build` di komputer lokal secara manual. Dockerfile (`Dockerfile.web` dan `Dockerfile.backend`) sudah menggunakan teknik **Multi-stage Build** yang otomatis meng-install dependensi dan meng-compile build produksi langsung di dalam container.
+> **Technical Build Note:**
+> You **DO NOT** need to execute `npm run build` on your local host. The Dockerfiles (`Dockerfile.web` and `Dockerfile.backend`) utilize **Multi-stage Builds** that install dependencies and compile production artifacts directly within Docker.
 
-### B. Rebuild Per-Service (Efisien saat ada perubahan kode)
-* **Jika hanya mengubah Frontend (Web React):**
+### B. Selective Service Rebuilds (Efficient during development)
+* **Rebuild Frontend only (React / UI changes):**
   ```bash
   docker compose up -d --build web-nginx
   ```
-* **Jika hanya mengubah Backend (Express/TypeScript):**
+* **Rebuild Backend only (Express / API changes):**
   ```bash
   docker compose up -d --build backend
   ```
 
-### C. Menghentikan Layanan
+### C. Stopping Services
 ```bash
 docker compose down
 ```
 
 ---
 
-## 4. Alokasi Resource Container
+## 4. Container Resource Allocation
 
-Pengaturan batas resource pada `docker-compose.yml`:
+Configured resource limits defined in `docker-compose.yml`:
 
-| Layanan | Batas CPU | Batas Memori | Reservasi CPU | Reservasi Memori |
+| Service | CPU Limit | Memory Limit | CPU Reservation | Memory Reservation |
 |---|---|---|---|---|
-| **backend** | 2 Core | 512 MB | 0.5 Core | 256 MB |
-| **web-nginx** | 1 Core | 256 MB | 0.25 Core | 128 MB |
+| **backend** | 2.0 Cores | 512 MB | 0.5 Cores | 256 MB |
+| **web-nginx** | 1.0 Core | 256 MB | 0.25 Cores | 128 MB |
 
 ---
 
-## 5. Troubleshooting Umum
+## 5. Troubleshooting Checklist
 
-1. **Error: Invalid Client / Invalid Account (-10001, -10007)**:
-   - Pastikan nilai `TTLOCK_CLIENT_ID`, `TTLOCK_CLIENT_SECRET`, `TTLOCK_USERNAME`, dan `TTLOCK_PASSWORD_MD5` di `backend/.env` sudah benar dan tidak ada spasi di ujung teks.
-2. **Error: Remote unlock not enabled (-4043)**:
-   - Buka aplikasi TTLOCK di smartphone $\rightarrow$ Pilih Lockbox $\rightarrow$ Settings $\rightarrow$ Aktifkan fitur *Remote Unlock*.
-3. **Port 5757 bentrok**:
-   - Ganti port mapping pada `docker-compose.yml` di bagian `web-nginx`:
+1. **Authentication Error: Invalid Client / Invalid Account (`-10001`, `-10007`)**:
+   - Verify `TTLOCK_CLIENT_ID`, `TTLOCK_CLIENT_SECRET`, `TTLOCK_USERNAME`, and `TTLOCK_PASSWORD_MD5` inside `backend/.env`. Ensure no leading or trailing whitespace.
+2. **Error: Remote unlock not enabled (`-4043`)**:
+   - Open the TTLOCK mobile app $\rightarrow$ Select Lockbox $\rightarrow$ Settings $\rightarrow$ Enable *Remote Unlock*.
+3. **Port 5757 Conflict**:
+   - Remap the host port in `docker-compose.yml`:
      ```yaml
      ports:
-       - "5858:5757" # ganti 5757 pertama dengan port yang diinginkan
+       - "5858:5757" # Replace 5858 with your desired host port
      ```

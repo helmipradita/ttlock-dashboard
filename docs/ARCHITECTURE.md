@@ -1,18 +1,18 @@
-# Arsitektur Sistem TTLOCK Dashboard
+# TTLOCK Dashboard — System Architecture
 
-Dokumen ini menjelaskan arsitektur perangkat lunak, diagram alur data, hierarki komponen, serta model deployment untuk **TTLOCK Dashboard**.
+This document outlines the software architecture, data flow sequences, frontend component hierarchy, and container deployment model for **TTLOCK Dashboard**.
 
 ---
 
-## 1. Diagram Arsitektur Keseluruhan
+## 1. Overall System Architecture
 
-Aplikasi ini menggunakan pola arsitektur **Single Page Application (SPA)** yang dilayani oleh Nginx sebagai Reverse Proxy dan Static File Server, terhubung ke backend Express.js yang bertindak sebagai jembatan integrasi ke TTLOCK Open Platform API v3.
+The application adopts a **Single Page Application (SPA)** model served by an Nginx reverse proxy and static asset server, interfaced with an Express.js backend that acts as an API gateway to the TTLOCK Open Platform API v3.
 
 ```mermaid
 graph TB
-    subgraph Klien["Browser / Klien"]
-        SPA["React SPA (Vite + TypeScript)"]
-        ThemeCtrl["Theme Controller (Light/Dark/System)"]
+    subgraph Client["Browser / Client"]
+        SPA["React 19 SPA (Vite + TypeScript)"]
+        ThemeCtrl["Theme Controller (Light / Dark / System)"]
         PdfGen["PDF Telemetry Generator (jsPDF + autoTable)"]
         SPA --- ThemeCtrl
         SPA --- PdfGen
@@ -39,7 +39,7 @@ graph TB
         SignalMapper --> TopoCache
     end
 
-    subgraph External["Layanan Pihak Ketiga"]
+    subgraph External["External Services"]
         TTLockCloud["TTLOCK Open Platform API v3<br/>(https://api.sciener.com)"]
     end
 
@@ -50,57 +50,57 @@ graph TB
 
 ---
 
-## 2. Diagram Alur Data (Data Flow & Sequences)
+## 2. Data Flow & Sequence Diagrams
 
-### A. Alur Pembuatan Passcode One-Time (Offline PIN)
-Passcode dibuat berdasarkan algoritma sinkronisasi waktu antara server TTLOCK dan unit fisik lockbox. **Tidak membutuhkan koneksi gateway internet.**
+### A. One-Time Offline Passcode Generation Flow
+Passcodes are computed algorithmically based on shared time synchronization between TTLOCK servers and physical lockbox firmware. **No gateway internet connectivity is required.**
 
 ```mermaid
 sequenceDiagram
     autonumber
-    actor User as Pengguna
+    actor User as Operator / User
     participant Web as React Web (PasscodeModal)
     participant Nginx as Nginx Proxy (:5757)
     participant Backend as Express API (:5000)
     participant TTLock as TTLOCK Cloud API
 
-    User->>Web: Klik "Get PIN" pada Lock Detail
+    User->>Web: Click "Get PIN" on Lock Detail
     Web->>Nginx: POST /api/locks/:lockId/passcode
     Nginx->>Backend: Proxy Pass
     Backend->>TTLock: POST /v3/keyboardPwd/get<br/>(lockId, keyboardPwdVersion=4, keyboardPwdType=1, startDate=now)
     TTLock-->>Backend: { keyboardPwd: "...", keyboardPwdId: 12345 }
     Backend-->>Web: { ok: true, keyboardPwd: "...", validHours: 6 }
-    Web-->>User: Menampilkan PIN Monospace + Tombol Copy
+    Web-->>User: Display Monospace PIN + Copy to Clipboard Button
 ```
 
 ---
 
-### B. Alur Pembukaan Kunci Jarak Jauh (Remote Unlock)
-Membutuhkan lockbox terhubung ke Gateway WiFi yang sedang Online, dan fitur *Remote Unlock* aktif pada aplikasi TTLOCK.
+### B. Remote Unlock Command Flow
+Requires the lockbox to be connected to an Online WiFi Gateway, with the *Remote Unlock* feature enabled in TTLOCK lock settings.
 
 ```mermaid
 sequenceDiagram
     autonumber
-    actor User as Pengguna
+    actor User as Operator / User
     participant Web as React Web (UnlockTerminal)
     participant Nginx as Nginx Proxy (:5757)
     participant Backend as Express API (:5000)
     participant TTLock as TTLOCK Cloud API
 
-    User->>Web: Klik "Unlock" & Klik "Confirm Unlock"
+    User->>Web: Click "Unlock" & "Confirm Unlock"
     Web->>Nginx: POST /api/locks/:lockId/unlock
     Nginx->>Backend: Proxy Pass
     Backend->>TTLock: POST /v3/lock/unlock<br/>(lockId, date=now)
     TTLock-->>Backend: { errcode: 0, errmsg: "none error message" }
     Backend-->>Web: { ok: true, human: "Success", ts: "..." }
-    Web->>Web: Invalidate Cache TanStack Query ["locks"]
-    Web-->>User: Tampilkan Banner Sukses
+    Web->>Web: Invalidate TanStack Query Cache ["locks"]
+    Web-->>User: Display Success Confirmation Banner
 ```
 
 ---
 
-### C. Alur Telemetri Sinyal & Enrich Lockbox (`/api/locks/enriched`)
-Mengagregasi sinyal RSSI terbaik dari seluruh gateway secara paralel, memprioritaskan gateway yang online, dan menyertakan timestamp pembacaan sinyal (`rssiUpdateDate`).
+### C. Signal Telemetry & Enriched Lockbox Aggregation (`/api/locks/enriched`)
+Aggregates the strongest RSSI reading per lockbox across all gateways in parallel, prioritizing online gateways, and capturing scan timestamps (`rssiUpdateDate`).
 
 ```mermaid
 sequenceDiagram
@@ -115,67 +115,67 @@ sequenceDiagram
         Backend->>TTLock: POST /v3/lock/list (all locks)
         Backend->>TTLock: POST /v3/gateway/list (all gateways)
     end
-    Backend->>Cache: Cek topologi gateway
+    Backend->>Cache: Check gateway topologies
     alt Cache Miss / Expired
         Backend->>TTLock: POST /v3/gateway/listLock (per gateway)
-        Backend->>Cache: Simpan topologi (TTL 30 detik)
+        Backend->>Cache: Store topology (TTL 30s)
     else Cache Hit
-        Backend->>Cache: Ambil data topologi tersimpan
+        Backend->>Cache: Retrieve cached topology
     end
-    Backend->>Backend: Map lockId -> Sinyal RSSI terbaik & status Gateway
+    Backend->>Backend: Map lockId -> Best RSSI signal & Gateway online status
     Backend->>TTLock: Batch POST /v3/lockRecord/list (fetch lastOpen)
     Backend-->>Client: { list: [ { lockId, lastOpen, rssi, rssiUpdateDate, gatewayId, gatewayName, networkName, gatewayIsOnline } ] }
 ```
 
 ---
 
-### D. Alur Ekspor Laporan Diagnostik Telemetri (PDF)
-Laporan hardware diagnostik dibuat secara client-side menggunakan `jspdf` dan `jspdf-autotable`. Library diimpor secara dinamis (*lazy load*) agar tidak membebani ukuran bundle awal aplikasi.
+### D. Hardware Diagnostics Telemetry PDF Export Flow
+Client-side PDF generation using `jspdf` and `jspdf-autotable`. Libraries are lazy-loaded on demand to preserve optimal initial application bundle size.
 
 ```mermaid
 sequenceDiagram
     autonumber
-    actor User as Pengguna
+    actor User as Operator / User
     participant Header as AppHeader.tsx
     participant PdfEngine as pdf-report.ts (Lazy Loaded)
     participant API as Backend API (:5000)
 
-    User->>Header: Klik "Download Report (PDF)"
+    User->>Header: Click "Download Report (PDF)"
     Header->>PdfEngine: generateTtlockPdfReport()
-    par Fetch Enriched Locks & Gateways & Topology
+    par Fetch Enriched Locks, Gateways & Topologies
         PdfEngine->>API: GET /api/locks/enriched
         PdfEngine->>API: GET /api/gateways
         PdfEngine->>API: GET /api/gateways/:id/topology
     end
-    PdfEngine->>PdfEngine: Filter grup kritis (Gateway Offline, Sinyal Lemah < -85 dBm, Low Battery)
-    PdfEngine->>PdfEngine: Render A4 PDF & Simpan File (ttlock-signal-report-*.pdf)
-    PdfEngine-->>Header: Return Nama File
-    Header-->>User: Trigger Browser Download + Tampilkan Notifikasi Sukses
+    PdfEngine->>PdfEngine: Triage critical groups (Offline Gateways, Weak Signal < -85 dBm, Low Battery)
+    PdfEngine->>PdfEngine: Render A4 PDF & Save Document (ttlock-signal-report-*.pdf)
+    PdfEngine-->>Header: Return Generated Filename
+    Header-->>User: Trigger Browser Download & Display Success Toast
 ```
 
 ---
 
-### E. Aturan Logika Sinyal & Stale Signal
+### E. Signal Logic & Stale Reading Evaluation Flow
 
 ```mermaid
 flowchart TD
-    Start["Evaluasi Sinyal Lockbox"] --> CheckGW{"Apakah Lockbox memiliki Gateway?"}
-    CheckGW -- "Tidak (hasGateway = 0)" --> Unlinked["Tampilkan 'Unlinked' (Direct BLE)"]
-    CheckGW -- "Ya (hasGateway = 1)" --> CheckGWOnline{"Apakah Gateway Online?"}
+    Start["Evaluate Lockbox Signal"] --> CheckGW{"Does lockbox have Gateway?"}
+    CheckGW -- "No (hasGateway = 0)" --> Unlinked["Display 'Unlinked' (Direct BLE)"]
+    CheckGW -- "Yes (hasGateway = 1)" --> CheckGWOnline{"Is connected Gateway Online?"}
     
-    CheckGWOnline -- "Tidak (isOnline = 0)" --> GWOffline["Tampilkan 'GW Offline' (Merah) & 'GW Down'"]
-    CheckGWOnline -- "Ya (isOnline = 1)" --> CheckRSSI{"Apakah RSSI terdeteksi?"}
+    CheckGWOnline -- "No (isOnline = 0)" --> GWOffline["Display 'GW Offline' (Red Badge) & 'GW Down'"]
+    CheckGWOnline -- "Yes (isOnline = 1)" --> CheckRSSI{"Is RSSI reading detected?"}
     
-    CheckRSSI -- "Null / Tidak ada" --> NoSig["Tampilkan 'No signal'"]
-    CheckRSSI -- "Ada nilai dBm" --> CheckAge{"Apakah rssiUpdateDate > 15 Menit?"}
+    CheckRSSI -- "Null / Undetected" --> NoSig["Display 'No signal'"]
+    CheckRSSI -- "Valid dBm Value" --> CheckAge{"Is rssiUpdateDate > 15 Minutes?"}
     
-    CheckAge -- "Ya (Stale)" --> StaleRender["Tampilkan dBm + Icon Jam Amber<br/>Tooltip: Snapshot lama / Stale"]
-    CheckAge -- "Tidak (Aktual)" --> LiveRender["Tampilkan dBm + Kualitas Sinyal (Hijau/Kuning/Merah)"]
+    CheckAge -- "Yes (Stale)" --> StaleRender["Display dBm + Amber Clock Icon<br/>Tooltip: Stale snapshot warning"]
+    CheckAge -- "No (Fresh)" --> LiveRender["Display dBm + Quality Indicator (Green / Amber / Red)"]
 ```
 
 ---
 
-## 3. Hierarki Komponen Frontend (Component Tree)
+## 3. Frontend Component Hierarchy
 
 ```mermaid
 graph TD
@@ -224,11 +224,11 @@ graph TD
 
 ---
 
-## 4. Struktur Layanan Docker
+## 4. Container Architecture & Resource Model
 
-Aplikasi dikemas dalam 2 container ringan:
+The application is deployed as two lightweight Docker containers:
 
-| Layanan | Image Dasar | Port Internal | Port Publik | Fungsi Utama |
+| Service | Base Image | Internal Port | Exposed Port | Role & Responsibility |
 |---|---|---|---|---|
-| **`web-nginx`** | `nginx:alpine` | 5757 | **5757** | Melayani aset build React & melakukan reverse proxy `/api/*` ke backend. |
-| **`backend`** | `node:22-alpine` | 5000 | *Tidak diekspos langsung* | REST API server, OAuth2 manager, telemetry aggregator, dan TTLOCK client. |
+| **`web-nginx`** | `nginx:alpine` | 5757 | **5757** | Serves static React production bundle & reverse-proxies `/api/*` to backend. |
+| **`backend`** | `node:22-alpine` | 5000 | *Not directly exposed* | Express API server, OAuth2 manager, telemetry aggregator, and TTLOCK client. |
