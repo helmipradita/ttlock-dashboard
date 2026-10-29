@@ -52,11 +52,19 @@ docker compose up -d --build backend     # backend only
 TTLOCK/
 ├── .github/
 │   ├── FUNDING.yml
+│   ├── ISSUE_TEMPLATE/
+│   │   ├── bug_report.md
+│   │   ├── config.yml
+│   │   └── feature_request.md
+│   ├── PULL_REQUEST_TEMPLATE.md
 │   ├── assets/
 │   └── workflows/
 │       └── docker-publish.yml
 ├── .dockerignore
 ├── LICENSE
+├── CODE_OF_CONDUCT.md
+├── CONTRIBUTING.md
+├── SECURITY.md
 ├── README.md
 ├── CHANGELOG.md
 ├── AGENTS.md
