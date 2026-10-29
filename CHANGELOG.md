@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-10-29
+
+### Added
+- **Open Source Community Funding**: Added `.github/FUNDING.yml` to authenticate non-commercial community backing.
+
+### Changed
+- **Version Bump**: Upgraded platform release version to `1.2.0` across frontend, backend, and documentation.
+
 ## [1.1.1] - 2026-10-29
 
 ### Added
