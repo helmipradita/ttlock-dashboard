@@ -82,7 +82,7 @@ export async function generateTtlockPdfReport(): Promise<string> {
         lockId: l.lockId,
         lockName: l.lockAlias || l.lockName || String(l.lockId),
         gatewayId: topo.gateway.gatewayId,
-        gatewayName: topo.gateway.networkName || `GW-${topo.gateway.gatewayId}`,
+        gatewayName: topo.gateway.gatewayName || topo.gateway.networkName || `GW-${topo.gateway.gatewayId}`,
         rssi: l.rssi,
         rssiQuality: quality,
       });

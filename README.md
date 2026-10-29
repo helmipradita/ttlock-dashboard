@@ -2,7 +2,7 @@
 
 Aplikasi web modern untuk **pemantauan (monitoring), telemetri perangkat keras, dan pengelolaan armada** Smart Lock & Gateway TTLOCK. Menampilkan status lockbox secara realtime, riwayat pembukaan, visualisasi topologi gateway interaktif, pembuatan PIN offline, pembukaan kunci jarak jauh, dan ekspor laporan diagnostik perangkat keras dalam format PDF.
 
-[![Version](https://img.shields.io/badge/Version-1.1.0-emerald.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/Version-1.1.1-emerald.svg)](CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
 [![GHCR Packages](https://img.shields.io/badge/GHCR-Images_Available-2088FF?logo=github&logoColor=white)](https://github.com/helmipradita/ttlock-dashboard/pkgs/container/ttlock-backend)

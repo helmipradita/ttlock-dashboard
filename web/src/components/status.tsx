@@ -1,6 +1,6 @@
 import type { LucideIcon } from "lucide-react";
-import { WifiHigh, Wifi, WifiLow, WifiZero, WifiOff, Clock } from "lucide-react";
-import { relativeTime } from "@/lib/format";
+import { WifiOff, WifiZero, Clock } from "lucide-react";
+import { relativeTime, isSignalStale, wifiIconForRssi } from "@/lib/format";
 
 type StatusVariant = "online" | "offline" | "success" | "failed" | "warning" | "default";
 
@@ -40,25 +40,6 @@ export function StatusBadge({
   );
 }
 
-export function wifiIconForRssi(rssi: number | null | undefined): {
-  Icon: LucideIcon;
-  color: string;
-} {
-  if (rssi == null) return { Icon: WifiZero, color: "text-muted-foreground" };
-  if (rssi > -75) return { Icon: WifiHigh, color: "text-emerald-500" };
-  if (rssi > -85) return { Icon: Wifi, color: "text-amber-500" };
-  return { Icon: WifiLow, color: "text-red-500" };
-}
-
-export function wifiIconForOnline(isOnline: number | null | undefined): {
-  Icon: LucideIcon;
-  color: string;
-} {
-  if (isOnline === 1) return { Icon: WifiHigh, color: "text-emerald-500" };
-  if (isOnline === 0) return { Icon: WifiOff, color: "text-muted-foreground" };
-  return { Icon: WifiZero, color: "text-muted-foreground" };
-}
-
 export function SignalDot({
   rssi,
   rssiUpdateDate,
@@ -92,7 +73,7 @@ export function SignalDot({
   }
 
   // Check if signal reading is older than 15 minutes (900,000 ms)
-  const isStale = rssiUpdateDate ? Date.now() - rssiUpdateDate > 15 * 60 * 1000 : false;
+  const isStale = isSignalStale(rssiUpdateDate);
   const timeAgo = rssiUpdateDate ? relativeTime(rssiUpdateDate) : null;
 
   const { Icon, color } = wifiIconForRssi(rssi);

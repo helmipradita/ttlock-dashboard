@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2026-10-29
+
+### Added
+- **Native Unit Test Suites**: Zero-dependency unit tests for backend (`backend/test/ttlock.test.ts`) and frontend (`web/test/format.test.ts`) using Node.js 22 built-in test runner.
+- **Timestamp Parsing Compatibility**: `formatDate` now transparently formats ISO-8601 strings, UNIX epoch millisecond numbers, and falsy inputs.
+
+### Changed
+- **Production Package Optimization**: Reclassified `shadcn` and `@tailwindcss/vite` as `devDependencies` in `web/package.json`, eliminating transitive runtime dependencies.
+- **Passcode Lifecycle Simplification**: Refactored `PasscodeModal` state synchronization to use declarative TanStack Query with retry handler.
+
+### Fixed
+- **API Reference Default Alignment**: Synchronized `GET /api/locks/:lockId/records` default `pageSize` in documentation to match backend code (`20`).
+- **Linter & React Render Warnings**: Resolved component re-declaration warnings in `AllLockboxesSection` and `GatewaysSection` by extracting `SortHeader` outside render body.
+- **PDF Report Telemetry Mapping**: Fixed gateway station label fallback in `pdf-report.ts` prioritizing `gatewayName` over WiFi SSID.
+- **WSL2 / Linux Native Binary Bus Error**: Upgraded `oxlint` to `1.90.0` ensuring seamless linting execution.
+
 ## [1.1.0] - 2026-10-28
 
 ### Added
