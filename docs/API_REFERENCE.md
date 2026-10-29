@@ -1,15 +1,15 @@
-# Referensi API TTLOCK Dashboard
+# TTLOCK Dashboard — API Reference
 
-Dokumen ini merinci endpoint REST API yang disediakan oleh Backend TTLOCK Dashboard serta integrasinya dengan TTLOCK Open Platform API v3.
+This document provides complete technical specifications for the internal REST API endpoints exposed by the TTLOCK Dashboard Backend and their integration with the TTLOCK Open Platform API v3.
 
 ---
 
-## 1. Endpoint Autentikasi
+## 1. Authentication Endpoints
 
 ### `GET /api/auth/status`
-Mengecek status autentikasi token TTLOCK saat ini.
+Checks the current TTLOCK OAuth2 token authentication status and metadata.
 
-**Respon Contoh:**
+**Example Response:**
 ```json
 {
   "authenticated": true,
@@ -22,12 +22,12 @@ Mengecek status autentikasi token TTLOCK saat ini.
 
 ---
 
-## 2. Endpoint Lockbox
+## 2. Lockbox Endpoints
 
 ### `GET /api/locks/enriched`
-Mengambil seluruh daftar lockbox yang diperkaya dengan data waktu pembukaan terakhir (`lastOpen`), kekuatan sinyal gateway terbaik (`rssi`), waktu scan sinyal (`rssiUpdateDate`), serta status gateway terkait (`gatewayIsOnline`, `gatewayId`, `gatewayName`, `networkName`).
+Retrieves all lockboxes enriched with real-time last open timestamp (`lastOpen`), optimal gateway RSSI signal reading (`rssi`), signal scan timestamp (`rssiUpdateDate`), and connected gateway online telemetry (`gatewayIsOnline`, `gatewayId`, `gatewayName`, `networkName`).
 
-**Respon Contoh:**
+**Example Response:**
 ```json
 {
   "list": [
@@ -53,9 +53,9 @@ Mengambil seluruh daftar lockbox yang diperkaya dengan data waktu pembukaan tera
 ---
 
 ### `GET /api/locks`
-Mengambil daftar seluruh lockbox secara cepat (*fast endpoint*) tanpa query `lastOpen` dan sinyal gateway. Digunakan khusus oleh komponen **Autocomplete Search** agar pencarian instan dan responsif.
+Fast lightweight endpoint retrieving raw lock records without `lastOpen` and signal calculations. Specially designed for high-speed autocomplete searching.
 
-**Respon Contoh:**
+**Example Response:**
 ```json
 {
   "list": [
@@ -75,18 +75,18 @@ Mengambil daftar seluruh lockbox secara cepat (*fast endpoint*) tanpa query `las
 ---
 
 ### `GET /api/locks/:lockId`
-Mengambil rincian spesifikasi lengkap satu lockbox (firmware, model, hardware, battery, feature value, passage mode, dll).
+Retrieves detailed technical specifications for a single lockbox (firmware revision, model number, battery, feature value, passage mode, etc.).
 
 ---
 
 ### `GET /api/locks/:lockId/records?pageNo=1&pageSize=20`
-Mengambil riwayat log pembukaan lockbox secara paginated.
+Retrieves paginated lock unlock event logs.
 
-**Parameter Query:**
-- `pageNo` (opsional, default: `1`): Nomor halaman.
-- `pageSize` (opsional, default: `20`): Jumlah log per halaman.
+**Query Parameters:**
+- `pageNo` (optional, default: `1`): Page number.
+- `pageSize` (optional, default: `20`): Number of logs per page.
 
-**Respon Contoh:**
+**Example Response:**
 ```json
 {
   "list": [
@@ -99,18 +99,18 @@ Mengambil riwayat log pembukaan lockbox secara paginated.
     }
   ],
   "total": 45,
-  "pages": 5,
+  "pages": 3,
   "pageNo": 1,
-  "pageSize": 10
+  "pageSize": 20
 }
 ```
 
 ---
 
 ### `GET /api/locks/:lockId/gateway`
-Mengambil informasi gateway yang terhubung ke lockbox beserta kekuatan sinyal RSSI dan waktu pembaruannya.
+Retrieves information about gateways in communication range of the lockbox along with RSSI signal levels and last scan timestamps.
 
-**Respon Contoh:**
+**Example Response:**
 ```json
 {
   "list": [
@@ -132,9 +132,9 @@ Mengambil informasi gateway yang terhubung ke lockbox beserta kekuatan sinyal RS
 ---
 
 ### `POST /api/locks/:lockId/passcode`
-Menghasilkan One-Time Passcode (PIN 6-10 digit) offline yang berlaku selama 6 jam dari waktu request. Passcode dihasilkan melalui algoritma sinkronisasi waktu dan **dapat digunakan langsung pada keypad fisik lockbox tanpa koneksi gateway/internet**.
+Generates an algorithmic One-Time Passcode (6-10 digits) valid for 6 hours from request time. Passcodes are generated via offline time-sync formulas and **can be entered directly on the physical lockbox keypad without requiring gateway or internet connectivity**.
 
-**Respon Contoh:**
+**Example Response:**
 ```json
 {
   "ok": true,
@@ -151,13 +151,13 @@ Menghasilkan One-Time Passcode (PIN 6-10 digit) offline yang berlaku selama 6 ja
 ---
 
 ### `POST /api/locks/:lockId/unlock`
-Mengirimkan perintah pembukaan kunci jarak jauh (*remote unlock*) ke lockbox melalui Gateway WiFi.
+Sends an instantaneous remote unlock instruction to the lockbox via connected WiFi Gateways.
 
-**Syarat Eksekusi:**
-1. Lockbox terhubung ke Gateway WiFi yang sedang Online.
-2. Fitur *Remote Unlock* telah diaktifkan pada pengaturan lockbox di aplikasi TTLOCK.
+**Prerequisites:**
+1. The lockbox must be connected to an Online WiFi Gateway.
+2. The *Remote Unlock* setting must be toggled on inside the official TTLOCK mobile application.
 
-**Respon Sukses:**
+**Success Response:**
 ```json
 {
   "ok": true,
@@ -170,7 +170,7 @@ Mengirimkan perintah pembukaan kunci jarak jauh (*remote unlock*) ke lockbox mel
 }
 ```
 
-**Respon Gagal (Contoh Gateway Down / Not Connected):**
+**Failure Response (e.g., Gateway Offline / Not Connected):**
 ```json
 {
   "ok": false,
@@ -185,12 +185,12 @@ Mengirimkan perintah pembukaan kunci jarak jauh (*remote unlock*) ke lockbox mel
 
 ---
 
-## 3. Endpoint Gateway & Topologi
+## 3. Gateway & Topology Endpoints
 
 ### `GET /api/gateways`
-Mengambil daftar seluruh gateway yang terdaftar pada akun TTLOCK.
+Retrieves all registered gateways linked to the developer account.
 
-**Respon Contoh:**
+**Example Response:**
 ```json
 {
   "list": [
@@ -210,11 +210,11 @@ Mengambil daftar seluruh gateway yang terdaftar pada akun TTLOCK.
 ---
 
 ### `GET /api/gateways/:gatewayId/topology`
-Mengambil data topologi satu gateway beserta daftar lockbox dalam jangkauannya dan nilai sinyal RSSI masing-masing.
+Retrieves the communication topology of a single gateway, including in-range lockboxes and their respective RSSI dBm values.
 
-> **Catatan Cache:** Hasil query endpoint ini dicache selama **30 detik** di backend untuk mencegah pembatasan kuota (*rate limiting*) API TTLOCK.
+> **Caching Behavior:** Results are cached in-memory for **30 seconds** with single-flight request coalescing to protect TTLOCK API rate limits.
 
-**Respon Contoh:**
+**Example Response:**
 ```json
 {
   "gateway": {

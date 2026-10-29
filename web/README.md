@@ -1,35 +1,35 @@
 # TTLOCK Dashboard — Frontend (Web Application)
 
-Aplikasi antarmuka web modern berbasis **React 19 + Vite 5.4 + TypeScript + Tailwind CSS v4 + shadcn/ui**.
+Modern frontend web interface powered by **React 19 + Vite 5.4 + TypeScript + Tailwind CSS v4 + shadcn/ui**.
 
 ---
 
-## 1. Fitur Antarmuka
+## 1. Key Interface Features
 
-- **Dark & Light Mode**: Deteksi otomatis preferensi tema sistem operasi pengguna dengan tombol toggle switcher manual dan penyimpanan state di `localStorage`.
-- **Smart Autocomplete Search**: Pencarian cepat instan dengan endpoint ringan (`/api/locks`), pintasan keyboard `/` atau `Ctrl+K`, dan pencocokan Lock ID, Nama, atau Alias.
-- **Hardware Diagnostics PDF Export**: Ekspor laporan telemetri hardware sekali klik via `jspdf` + `jspdf-autotable` (lazy loaded).
-- **Fleet Triage Filters**: Filter cepat status armada (*All*, *Needs Attention*, *Weak Signal*, *No Gateway*, *Battery ≤ 20%*, *Connected*).
-- **Live Signal Telemetry**: Indikator kekuatan sinyal RSSI kompak (single-line) dengan deteksi snapshot basi (> 15m) dan peringatan gateway offline.
-- **Passcode Modal**: Dialog pembuatan One-Time Passcode offline (6 jam) dengan tampilan kode monospace besar dan tombol 1-klik copy.
-- **Remote Unlock Dialog**: Antarmuka pembukaan kunci via gateway dengan konfirmasi aman dan status respons visual.
-- **Interactive Gateway Topology**: Canvas interaktif yang menampilkan hubungan Gateway $\leftrightarrow$ Lockbox dengan pewarnaan RSSI dan kemampuan adaptasi tema gelap/terang.
-- **Tabel Multi-Sorting**: Kemampuan pengurutan data lockbox dan gateway berdasarkan status online, nama WiFi, alias, dan aktivitas terakhir.
+- **Dark & Light Mode**: Automatic system OS color scheme detection with manual toggle persisted in `localStorage`.
+- **Smart Autocomplete Search**: Sub-millisecond lockbox search via lightweight `/api/locks`, keyboard shortcuts (`/` or `Ctrl+K`), and matching across Lock ID, Name, or Alias.
+- **Hardware Diagnostics PDF Export**: Client-side A4 telemetry report generation with one-click export powered by `jspdf` + `jspdf-autotable` (lazy loaded).
+- **Fleet Triage Filters**: One-click fleet triage filtering (*All*, *Needs Attention*, *Weak Signal*, *No Gateway*, *Battery ≤ 20%*, *Connected*).
+- **Live Signal Telemetry**: Compact single-line RSSI badges with stale snapshot flags (> 15m) and gateway offline warnings.
+- **Passcode Modal**: 6-hour offline One-Time Passcode modal featuring large monospace digits, one-click clipboard copying, and retry handling.
+- **Remote Unlock Console**: Safe two-step remote unlock modal with immediate feedback and TanStack Query cache invalidation.
+- **Interactive Gateway Topology**: Dynamic Canvas graph illustrating Gateway $\leftrightarrow$ Lockbox associations with adaptive theme palettes and animated edge links.
+- **Multi-Column Sorting**: Comprehensive table sorting across online statuses, gateway names, battery levels, RSSI, and last unlock activity.
 
 ---
 
-## 2. Struktur Direktori
+## 2. Directory Structure
 
 ```
 web/
 ├── public/
-│   ├── favicon.png            # Icon tab browser
-│   └── ttlock-logo.webp       # Logo TTLock
+│   ├── favicon.png            # Browser tab favicon
+│   └── ttlock-logo.webp       # Brand logo
 ├── src/
-│   ├── api/                   # Typed API client & interfaces
+│   ├── api/                   # Typed API client & response interfaces
 │   ├── components/
 │   │   ├── layout/            # AppHeader, ThemeToggle
-│   │   ├── ui/                # Primitif komponen shadcn/ui
+│   │   ├── ui/                # Accessible shadcn/ui primitives
 │   │   ├── AllLockboxesSection.tsx
 │   │   ├── GatewaysSection.tsx
 │   │   ├── InlineTopology.tsx
@@ -38,8 +38,10 @@ web/
 │   │   ├── UnlockTerminal.tsx
 │   │   └── status.tsx
 │   ├── hooks/                 # useTheme, useCountdown
-│   ├── lib/                   # Utility formatting, styling, pdf-report.ts
-│   └── topology/              # Engine canvas renderer topologi
+│   ├── lib/                   # Formatting utilities, styling, pdf-report.ts
+│   └── topology/              # Dynamic Canvas topology graph renderer
+├── test/
+│   └── format.test.ts         # Native Node 22 unit test suites
 ├── index.html
 ├── package.json
 └── vite.config.ts
@@ -47,17 +49,23 @@ web/
 
 ---
 
-## 3. Menjalankan Secara Mandiri (Development Lokal)
+## 3. Local Development
 
 ```bash
-# 1. Masuk ke folder web
+# 1. Navigate to web directory
 cd web
 
-# 2. Install dependensi
+# 2. Install dependencies
 npm install
 
-# 3. Jalankan server development
+# 3. Run unit tests
+npm test
+
+# 4. Run linter
+npm run lint
+
+# 5. Start development server
 npm run dev
-# Buka http://localhost:5173 (request /api otomatis di-proxy ke backend :5757)
+# Open http://localhost:5173 (requests to /api are automatically proxied to backend :5757)
 ```
-*(Catatan: Jika memakai Docker, proses build sudah otomatis berjalan di dalam container).*
+*(Note: When using Docker Compose, compilation and Nginx static serving occur automatically inside the container).*

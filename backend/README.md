@@ -1,32 +1,35 @@
 # TTLOCK Dashboard — Backend Service
 
-Service API Gateway berbasis **Node.js + Express.js + TypeScript** yang menangani komunikasi dan otentikasi dengan TTLOCK Open Platform API v3.
+API Gateway service built with **Node.js + Express.js + TypeScript** managing integration and authentication with the TTLOCK Open Platform API v3.
 
 ---
 
-## 1. Fitur Utama
+## 1. Key Capabilities
 
-- **Otentikasi Otomatis (OAuth2)**: Login otomatis saat startup dan pembaruan token (*auto refresh*) otomatis 24 jam sebelum masa berlaku habis.
-- **Enriched Lock & Signal Telemetry**: Pengambilan daftar lockbox dengan status waktu buka kunci terakhir, agregasi sinyal RSSI terbaik, dan status gateway online secara realtime via `/api/locks/enriched`.
-- **Fast Lock Query**: Endpoint ringan `/api/locks` untuk pencarian autocomplete instan tanpa latensi enrichment.
-- **Offline Passcode Generator**: Pembuatan One-Time PIN (6 jam) secara offline via endpoint `/api/locks/:id/passcode`.
-- **Remote Unlock Gateway**: Pengiriman instruksi buka kunci jarak jauh ke Gateway WiFi via endpoint `/api/locks/:id/unlock`.
-- **Topology & Single-Flight Cache**: Cache memory 30 detik untuk data topologi gateway demi menghindari throttling API TTLOCK.
-- **Fail-Fast Validation**: Memvalidasi environment variables `TTLOCK_*` secara ketat saat booting, mencegah silent failure.
+- **Automated OAuth2 Lifecycle**: Autonomous login on boot and auto-refresh 24 hours prior to token expiration.
+- **Enriched Lock & Signal Telemetry**: Retrieves lockbox inventories enriched with real-time `lastOpen` timestamps, best RSSI signal aggregation, and connected gateway online statuses via `/api/locks/enriched`.
+- **Fast Lock Query**: Lightweight `/api/locks` endpoint designed for rapid autocomplete searching without enrichment latency.
+- **Offline Passcode Generator**: Algorithmic 6-hour One-Time PIN generation via `/api/locks/:id/passcode`.
+- **Remote Unlock Gateway**: Instant remote unlock dispatch via online WiFi gateways via `/api/locks/:id/unlock`.
+- **Topology & Single-Flight Cache**: 30-second in-memory topology cache with request coalescing to protect TTLock API rate limits.
+- **Fail-Fast Environment Validation**: Strict validation of required `TTLOCK_*` environment credentials during initialization.
+- **Native Unit Testing**: High-speed, zero-dependency unit tests running via Node.js native test runner.
 
 ---
 
-## 2. Struktur Direktori
+## 2. Directory Structure
 
 ```
 backend/
 ├── src/
-│   ├── config.ts              # Pemuat variabel environment (.env)
-│   ├── main.ts                # Entry point server Express
+│   ├── config.ts              # Environment configuration loader (.env)
+│   ├── main.ts                # Express server bootstrapper
 │   ├── routes/
-│   │   └── ttlock.routes.ts   # Definisi route REST API
+│   │   └── ttlock.routes.ts   # REST API route definitions
 │   └── services/
 │       └── ttlock.service.ts  # TTLOCK client, OAuth2 manager, cache
+├── test/
+│   └── ttlock.test.ts         # Native Node 22 unit test suites
 ├── .env.example               # Template environment
 ├── package.json
 └── tsconfig.json
@@ -34,26 +37,29 @@ backend/
 
 ---
 
-## 3. Menjalankan Secara Mandiri (Development Lokal)
+## 3. Local Development
 
 ```bash
-# 1. Masuk ke folder backend
+# 1. Navigate to backend directory
 cd backend
 
-# 2. Salin dan isi file .env
+# 2. Configure environment file
 cp .env.example .env
 
-# 3. Install dependensi
+# 3. Install dependencies
 npm install
 
-# 4. Jalankan mode pengembangan
+# 4. Run unit tests
+npm test
+
+# 5. Start development server
 npm run dev
-# Server akan aktif di http://localhost:5757 (atau port di .env)
+# Server listens at http://localhost:5757 (or configured PORT)
 ```
 
-Untuk build produksi mandiri:
+Production build & execution:
 ```bash
 npm run build
 npm start
 ```
-*(Catatan: Jika memakai Docker, proses build sudah otomatis berjalan di dalam container).*
+*(Note: When using Docker Compose, the build and compilation happen automatically within the container).*
