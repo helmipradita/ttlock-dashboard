@@ -7,12 +7,10 @@ export function useCountdown(
 ) {
   const [remaining, setRemaining] = useState(totalSeconds);
   const onTickRef = useRef(onTick);
-  onTickRef.current = onTick;
 
   useEffect(() => {
-    if (!enabled) return;
-    setRemaining(totalSeconds);
-  }, [totalSeconds, enabled]);
+    onTickRef.current = onTick;
+  });
 
   useEffect(() => {
     if (!enabled) return;

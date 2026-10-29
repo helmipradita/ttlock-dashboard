@@ -79,12 +79,12 @@ Mengambil rincian spesifikasi lengkap satu lockbox (firmware, model, hardware, b
 
 ---
 
-### `GET /api/locks/:lockId/records?pageNo=1&pageSize=10`
+### `GET /api/locks/:lockId/records?pageNo=1&pageSize=20`
 Mengambil riwayat log pembukaan lockbox secara paginated.
 
 **Parameter Query:**
 - `pageNo` (opsional, default: `1`): Nomor halaman.
-- `pageSize` (opsional, default: `10`): Jumlah log per halaman.
+- `pageSize` (opsional, default: `20`): Jumlah log per halaman.
 
 **Respon Contoh:**
 ```json

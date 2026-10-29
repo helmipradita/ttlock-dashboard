@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { getLockPasscode } from "@/api/client";
@@ -13,26 +14,46 @@ interface Props {
 }
 
 export function PasscodeModal({ lockId, lockName, open, onClose }: Props) {
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<PasscodeResponse | null>(null);
   const [copied, setCopied] = useState(false);
 
-  async function fetchPasscode() {
-    setLoading(true);
-    setCopied(false);
-    const res = await getLockPasscode(lockId);
-    setResult(res);
-    setLoading(false);
-  }
+  const { data: rawResult, isLoading: loading, error, refetch } = useQuery({
+    queryKey: ["passcode", lockId, open],
+    queryFn: () => getLockPasscode(lockId),
+    enabled: open,
+    staleTime: 0,
+    gcTime: 0,
+  });
 
-  useEffect(() => {
-    if (open) {
-      fetchPasscode();
-    } else {
-      setResult(null);
-      setCopied(false);
+  const fetchPasscode = () => {
+    setCopied(false);
+    refetch();
+  };
+
+  const result: PasscodeResponse | null = useMemo(() => {
+    if (!open) return null;
+    if (rawResult) return rawResult;
+    if (error) {
+      return {
+        ok: false,
+        errcode: -1,
+        errmsg: (error as Error)?.message || "Failed to request passcode",
+        human: "Failed to reach TTLock API",
+        lockId,
+        ts: "",
+      };
     }
-  }, [open, lockId]);
+    return null;
+  }, [open, rawResult, error, lockId]);
+
+  const resultTs = result?.ts;
+  const windowText = useMemo(() => {
+    if (!resultTs) return "Active for 6 hours from creation";
+    const start = new Date(resultTs);
+    const end = new Date(start.getTime() + 6 * 3600 * 1000);
+    const sStr = start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    const eStr = end.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    return `Active for 6 hours from creation (${sStr} – ${eStr})`;
+  }, [resultTs]);
 
   function copyToClipboard() {
     if (result?.keyboardPwd) {
@@ -124,7 +145,7 @@ export function PasscodeModal({ lockId, lockName, open, onClose }: Props) {
                     <strong className="text-foreground font-medium">Single-Use (1x):</strong> The algorithmic PIN expires immediately after the first successful keypad unlock.
                   </li>
                   <li>
-                    <strong className="text-foreground font-medium">6-Hour Window:</strong> Active for 6 hours from creation ({new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} – {new Date(Date.now() + 6 * 3600 * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}).
+                    <strong className="text-foreground font-medium">6-Hour Window:</strong> {windowText}.
                   </li>
                   <li>
                     <strong className="text-foreground font-medium">Offline Architecture:</strong> Evaluated algorithmically by physical lockbox firmware. No gateway or internet link needed.

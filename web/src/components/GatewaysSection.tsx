@@ -20,13 +20,40 @@ import {
   Unplug,
   RefreshCw,
 } from "lucide-react";
-import { StatusBadge, SignalDot, wifiIconForOnline } from "@/components/status";
+import { StatusBadge, SignalDot } from "@/components/status";
+import { wifiIconForOnline } from "@/lib/format";
 import { InlineTopology } from "@/components/InlineTopology";
 
 type SortKey = "gatewayId" | "gatewayName" | "gatewayMac" | "networkName" | "lockNum" | "isOnline";
 
 interface Props {
   onOpenLock: (lockId: number) => void;
+}
+
+interface SortHeaderProps {
+  field: SortKey;
+  children: React.ReactNode;
+  sortKey: SortKey | null;
+  sortDir: "asc" | "desc";
+  onToggle: (key: SortKey) => void;
+}
+
+function GatewaySortHeader({ field, children, sortKey, sortDir, onToggle }: SortHeaderProps) {
+  const isActive = sortKey === field;
+  return (
+    <TableHead
+      className="whitespace-nowrap cursor-pointer select-none text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+      onClick={() => onToggle(field)}
+      title={`Sort by ${String(children)}`}
+    >
+      <span className="inline-flex items-center gap-1">
+        <span>{children}</span>
+        {isActive && (
+          <span className="text-foreground text-xs">{sortDir === "asc" ? "↑" : "↓"}</span>
+        )}
+      </span>
+    </TableHead>
+  );
 }
 
 export function GatewaysSection({ onOpenLock }: Props) {
@@ -79,24 +106,6 @@ export function GatewaysSection({ onOpenLock }: Props) {
     }
   }
 
-  function SortHeader({ field, children }: { field: SortKey; children: React.ReactNode }) {
-    const isActive = sortKey === field;
-    return (
-      <TableHead
-        className="whitespace-nowrap cursor-pointer select-none text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
-        onClick={() => toggleSort(field)}
-        title={`Sort by ${String(children)}`}
-      >
-        <span className="inline-flex items-center gap-1">
-          <span>{children}</span>
-          {isActive && (
-            <span className="text-foreground text-xs">{sortDir === "asc" ? "↑" : "↓"}</span>
-          )}
-        </span>
-      </TableHead>
-    );
-  }
-
   return (
     <div className="rounded-lg border border-border bg-card text-card-foreground">
       <div className="px-4 sm:px-5 py-4 border-b border-border flex items-center justify-between flex-wrap gap-3">
@@ -136,12 +145,12 @@ export function GatewaysSection({ onOpenLock }: Props) {
           <TableHeader className="sticky top-[57px] z-20 bg-card shadow-[0_1px_0_0_var(--border)]">
             <TableRow className="bg-muted/40 border-b border-border">
               <TableHead className="w-8 bg-card" />
-              <SortHeader field="gatewayId">Gateway ID</SortHeader>
-              <SortHeader field="gatewayName">Gateway Name</SortHeader>
-              <SortHeader field="gatewayMac">MAC</SortHeader>
-              <SortHeader field="networkName">WiFi Network</SortHeader>
-              <SortHeader field="lockNum">Locks</SortHeader>
-              <SortHeader field="isOnline">Status</SortHeader>
+              <GatewaySortHeader field="gatewayId" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort}>Gateway ID</GatewaySortHeader>
+              <GatewaySortHeader field="gatewayName" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort}>Gateway Name</GatewaySortHeader>
+              <GatewaySortHeader field="gatewayMac" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort}>MAC</GatewaySortHeader>
+              <GatewaySortHeader field="networkName" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort}>WiFi Network</GatewaySortHeader>
+              <GatewaySortHeader field="lockNum" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort}>Locks</GatewaySortHeader>
+              <GatewaySortHeader field="isOnline" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort}>Status</GatewaySortHeader>
               <TableHead className="w-28 text-right text-xs font-medium text-muted-foreground bg-card">Action</TableHead>
             </TableRow>
           </TableHeader>

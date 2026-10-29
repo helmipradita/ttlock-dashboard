@@ -1,3 +1,6 @@
+import type { LucideIcon } from "lucide-react";
+import { WifiHigh, Wifi, WifiLow, WifiZero, WifiOff } from "lucide-react";
+
 export const LOCK_RECORD_TYPES: Record<number, string> = {
   1: "App",
   2: "Parking Lock",
@@ -27,9 +30,10 @@ export const LOCK_RECORD_TYPES: Record<number, string> = {
   48: "Invalid Passcode",
 };
 
-export function formatDate(ts: number | null): string {
+export function formatDate(ts: number | string | null | undefined): string {
   if (!ts) return "-";
-  const d = new Date(ts);
+  const d = typeof ts === "string" ? new Date(ts) : new Date(ts);
+  if (isNaN(d.getTime())) return "-";
   const dd = String(d.getDate()).padStart(2, "0");
   const mm = String(d.getMonth() + 1).padStart(2, "0");
   const yyyy = d.getFullYear();
@@ -71,4 +75,28 @@ export function rssiInfo(rssi: number | null | undefined): {
   if (rssi > -75) return { label: `${rssi} (Strong)`, color: "text-emerald-600 dark:text-emerald-400" };
   if (rssi > -85) return { label: `${rssi} (Medium)`, color: "text-amber-600 dark:text-amber-400" };
   return { label: `${rssi} (Weak)`, color: "text-red-600 dark:text-red-400" };
+}
+
+export function isSignalStale(ts?: number | null, thresholdMs = 15 * 60 * 1000): boolean {
+  if (!ts) return false;
+  return Date.now() - ts > thresholdMs;
+}
+
+export function wifiIconForRssi(rssi: number | null | undefined): {
+  Icon: LucideIcon;
+  color: string;
+} {
+  if (rssi == null) return { Icon: WifiZero, color: "text-muted-foreground" };
+  if (rssi > -75) return { Icon: WifiHigh, color: "text-emerald-500" };
+  if (rssi > -85) return { Icon: Wifi, color: "text-amber-500" };
+  return { Icon: WifiLow, color: "text-red-500" };
+}
+
+export function wifiIconForOnline(isOnline: number | null | undefined): {
+  Icon: LucideIcon;
+  color: string;
+} {
+  if (isOnline === 1) return { Icon: WifiHigh, color: "text-emerald-500" };
+  if (isOnline === 0) return { Icon: WifiOff, color: "text-muted-foreground" };
+  return { Icon: WifiZero, color: "text-muted-foreground" };
 }

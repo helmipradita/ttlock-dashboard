@@ -56,13 +56,14 @@ export function LockHistorySection({ lockSelect }: Props) {
   const [showDropdown, setShowDropdown] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!lockSelect) return;
+  const [prevLockSelect, setPrevLockSelect] = useState(lockSelect);
+  if (lockSelect && lockSelect !== prevLockSelect) {
+    setPrevLockSelect(lockSelect);
     const id = String(lockSelect.id);
     setSearchId(id);
     setActiveId(id);
     setPage(1);
-  }, [lockSelect?.n]);
+  }
 
   // Click outside to close dropdown
   useEffect(() => {

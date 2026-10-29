@@ -1,7 +1,9 @@
 export interface AuthStatus {
   authenticated: boolean;
-  username: string;
-  expiresAt: number | null;
+  username?: string;
+  expiresAt?: string | null;
+  uid?: number;
+  scope?: string;
 }
 
 export interface Lock {

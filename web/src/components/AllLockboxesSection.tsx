@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getEnrichedLocks } from "@/api/client";
 import type { Lock } from "@/api/types";
@@ -62,6 +62,36 @@ function BatteryIcon({ level }: { level: number | null | undefined }) {
   return <BatteryFull className="w-3.5 h-3.5 text-emerald-500" />;
 }
 
+const EMPTY_LOCKS: Lock[] = [];
+
+interface SortHeaderProps {
+  field: SortKey;
+  children: React.ReactNode;
+  sortKey: SortKey | null;
+  sortDir: "asc" | "desc";
+  onToggle: (field: SortKey) => void;
+}
+
+function LockboxSortHeader({ field, children, sortKey, sortDir, onToggle }: SortHeaderProps) {
+  const isActive = sortKey === field;
+  return (
+    <TableHead
+      className="w-auto whitespace-nowrap cursor-pointer select-none text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+      onClick={() => onToggle(field)}
+      title={`Sort by ${String(children)}`}
+    >
+      <span className="inline-flex items-center gap-1">
+        <span>{children}</span>
+        {isActive ? (
+          <span className="text-foreground text-xs">{sortDir === "asc" ? "↑" : "↓"}</span>
+        ) : sortKey === null && (field === "hasGateway" || field === "lastOpen") ? (
+          <span className="text-muted-foreground/40 text-xs">{field === "hasGateway" ? "↑" : "↓"}</span>
+        ) : null}
+      </span>
+    </TableHead>
+  );
+}
+
 export function AllLockboxesSection({ onLockSelect, selectedLockId }: Props) {
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
@@ -76,13 +106,6 @@ export function AllLockboxesSection({ onLockSelect, selectedLockId }: Props) {
     refetchInterval: paused ? false : 300_000,
   });
 
-  // Automatically keep auto-refresh paused once initial data loads to conserve TTLock API quotas
-  useEffect(() => {
-    if (query.data) {
-      setPaused(true);
-    }
-  }, [query.data]);
-
   const countdown = useCountdown(
     300,
     useCallback(() => {
@@ -91,7 +114,7 @@ export function AllLockboxesSection({ onLockSelect, selectedLockId }: Props) {
     !paused
   );
 
-  const rawList = query.data?.list ?? [];
+  const rawList = query.data?.list ?? EMPTY_LOCKS;
 
   const counts = useMemo(() => {
     const unlinked = rawList.filter((l) => l.hasGateway === 0).length;
@@ -209,26 +232,6 @@ export function AllLockboxesSection({ onLockSelect, selectedLockId }: Props) {
       setSortKey(key);
       setSortDir("asc");
     }
-  }
-
-  function SortHeader({ field, children }: { field: SortKey; children: React.ReactNode }) {
-    const isActive = sortKey === field;
-    return (
-      <TableHead
-        className="w-auto whitespace-nowrap cursor-pointer select-none text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
-        onClick={() => toggleSort(field)}
-        title={`Sort by ${String(children)}`}
-      >
-        <span className="inline-flex items-center gap-1">
-          <span>{children}</span>
-          {isActive ? (
-            <span className="text-foreground text-xs">{sortDir === "asc" ? "↑" : "↓"}</span>
-          ) : sortKey === null && (field === "hasGateway" || field === "lastOpen") ? (
-            <span className="text-muted-foreground/40 text-xs">{field === "hasGateway" ? "↑" : "↓"}</span>
-          ) : null}
-        </span>
-      </TableHead>
-    );
   }
 
   return (
@@ -388,14 +391,14 @@ export function AllLockboxesSection({ onLockSelect, selectedLockId }: Props) {
           <TableHeader className="sticky top-[57px] z-20 bg-card shadow-[0_1px_0_0_var(--border)]">
             <TableRow className="bg-muted/40 border-b border-border">
               <TableHead className="w-6 bg-card" />
-              <SortHeader field="lockId">Lock ID</SortHeader>
-              <SortHeader field="lockName">Name</SortHeader>
-              <SortHeader field="lockAlias">Alias</SortHeader>
-              <SortHeader field="lastOpen">Last Open</SortHeader>
-              <SortHeader field="electricQuantity">Battery</SortHeader>
-              <SortHeader field="rssi">Signal</SortHeader>
-              <SortHeader field="gatewayName">Gateway / WiFi</SortHeader>
-              <SortHeader field="hasGateway">Status</SortHeader>
+              <LockboxSortHeader field="lockId" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort}>Lock ID</LockboxSortHeader>
+              <LockboxSortHeader field="lockName" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort}>Name</LockboxSortHeader>
+              <LockboxSortHeader field="lockAlias" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort}>Alias</LockboxSortHeader>
+              <LockboxSortHeader field="lastOpen" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort}>Last Open</LockboxSortHeader>
+              <LockboxSortHeader field="electricQuantity" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort}>Battery</LockboxSortHeader>
+              <LockboxSortHeader field="rssi" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort}>Signal</LockboxSortHeader>
+              <LockboxSortHeader field="gatewayName" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort}>Gateway / WiFi</LockboxSortHeader>
+              <LockboxSortHeader field="hasGateway" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort}>Status</LockboxSortHeader>
               <TableHead className="w-24 text-right text-xs font-medium text-muted-foreground bg-card">Action</TableHead>
             </TableRow>
           </TableHeader>
