@@ -5,7 +5,8 @@ A modern web application for **real-time monitoring, hardware telemetry, and fle
 [![Version](https://img.shields.io/badge/Version-1.2.0-emerald.svg)](CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
-[![GHCR Packages](https://img.shields.io/badge/GHCR-Images_Available-2088FF?logo=github&logoColor=white)](https://github.com/helmipradita/ttlock-dashboard/pkgs/container/ttlock-backend)
+[![GHCR Backend](https://img.shields.io/badge/GHCR-Backend-2088FF?logo=github&logoColor=white)](https://github.com/helmipradita/ttlock-dashboard/pkgs/container/ttlock-backend)
+[![GHCR Web](https://img.shields.io/badge/GHCR-Web--Nginx-2088FF?logo=github&logoColor=white)](https://github.com/helmipradita/ttlock-dashboard/pkgs/container/ttlock-web-nginx)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](web/)
 [![Express](https://img.shields.io/badge/Express.js-Backend-black?logo=express)](backend/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x%20%7C%206.x-3178C6?logo=typescript&logoColor=white)](web/tsconfig.json)
@@ -76,11 +77,11 @@ Choose the method that best matches your workflow:
 
 Ideal for operators running the dashboard directly on local workstations or production servers.
 
-1. Create a `docker-compose.yml` file in any directory:
+1. Create a `docker-compose.yml` file in any directory (you can pin `:v1.2.0` or use `:latest`):
    ```yaml
    services:
      backend:
-       image: ghcr.io/helmipradita/ttlock-backend:latest
+       image: ghcr.io/helmipradita/ttlock-backend:v1.2.0 # or :latest
        environment:
          - TTLOCK_CLIENT_ID=your_client_id
          - TTLOCK_CLIENT_SECRET=your_client_secret
@@ -92,7 +93,7 @@ Ideal for operators running the dashboard directly on local workstations or prod
        restart: unless-stopped
 
      web-nginx:
-       image: ghcr.io/helmipradita/ttlock-web-nginx:latest
+       image: ghcr.io/helmipradita/ttlock-web-nginx:v1.2.0 # or :latest
        ports:
          - "5757:5757"
        depends_on:
