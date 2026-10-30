@@ -485,7 +485,8 @@ class TTLockService {
             lockName: l.lockName,
             lockAlias: l.lockAlias,
             rssi: l.rssi,
-            updateDate: l.updateDate,
+            rssiUpdateDate: l.updateDate ?? null,
+            updateDate: l.updateDate ?? null,
           })),
         };
 

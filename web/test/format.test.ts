@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { formatDate, relativeTime, batteryLevel, rssiInfo } from "../src/lib/format.ts";
+import { formatDate, relativeTime, batteryLevel, rssiInfo, isSignalStale } from "../src/lib/format.ts";
 
 test("formatDate handles timestamps correctly", () => {
   assert.equal(formatDate(null), "-");
@@ -36,4 +36,18 @@ test("rssiInfo categorization", () => {
   assert.equal(rssiInfo(-65).label, "-65 (Strong)");
   assert.equal(rssiInfo(-80).label, "-80 (Medium)");
   assert.equal(rssiInfo(-92).label, "-92 (Weak)");
+});
+
+test("isSignalStale detects readings older than 15 minutes", () => {
+  assert.equal(isSignalStale(null), false);
+  assert.equal(isSignalStale(undefined), false);
+  const now = Date.now();
+  // 5 minutes ago -> fresh
+  assert.equal(isSignalStale(now - 5 * 60_000), false);
+  // 14 minutes ago -> fresh
+  assert.equal(isSignalStale(now - 14 * 60_000), false);
+  // 16 minutes ago -> stale
+  assert.equal(isSignalStale(now - 16 * 60_000), true);
+  // 2 hours ago -> stale
+  assert.equal(isSignalStale(now - 2 * 3600_000), true);
 });

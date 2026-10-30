@@ -99,7 +99,9 @@ TTLOCK/
 └── web/
     ├── README.md
     ├── package.json
+    ├── tsconfig.json
     ├── vite.config.ts
+    ├── components.json
     ├── index.html
     ├── test/
     │   └── format.test.ts

@@ -44,6 +44,8 @@ web/
 │   └── format.test.ts         # Native Node 22 unit test suites
 ├── index.html
 ├── package.json
+├── tsconfig.json
+├── components.json
 └── vite.config.ts
 ```
 

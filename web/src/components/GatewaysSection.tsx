@@ -303,7 +303,12 @@ export function GatewaysSection({ onOpenLock }: Props) {
                               <span className="truncate max-w-[180px] text-foreground">
                                 {lock.lockAlias || lock.lockName || "None"}
                               </span>
-                              <SignalDot rssi={lock.rssi} size="xs" />
+                              <SignalDot
+                                rssi={lock.rssi}
+                                rssiUpdateDate={lock.rssiUpdateDate ?? lock.updateDate}
+                                gatewayIsOnline={gw.isOnline}
+                                size="xs"
+                              />
                               <div className="ml-auto">
                                 <Button
                                   variant="ghost"
