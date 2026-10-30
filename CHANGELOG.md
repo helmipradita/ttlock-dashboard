@@ -5,40 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.3.0] - 2026-10-29
-
-### Added
-- **Official Termius Brand Assets**: Replaced placeholder assets with authentic high-resolution PNG and SVG vector logo directly extracted from Termius' official brand bundle.
-- **Universal Documentation Standardization**: Completely translated and harmonized all architecture, API reference, deployment guides, and README files into English.
-
-### Changed
-- **Version Bump**: Upgraded platform release version to `1.3.0` across frontend, backend, packages, and documentation.
-
 ## [1.2.0] - 2026-10-29
 
 ### Added
-- **Termius Open Source Program Integration**: Added official Termius sponsorship acknowledgment and backlink in `README.md`.
-- **Open Source Community Funding**: Added `.github/FUNDING.yml` to authenticate non-commercial community backing.
-- **Sponsor Brand Assets**: Embedded standalone Termius vector logo in `.github/assets/termius-logo.svg`.
+- **Termius Open Source Program Integration**: Added official Termius sponsorship acknowledgment, backlink, and dual-theme adaptive brand assets (`.github/assets/termius-logo.png` & `termius-logo-white.png`) with explicit `#sponsors` anchor in `README.md`.
+- **Open Source Community Standards**: Established full GitHub Community Health profile (100% score) including Contributor Covenant Code of Conduct, Contributing Guidelines, Security Policy, Issue Templates, and Pull Request Template.
+- **Universal Documentation Standardization**: Harmonized all architecture, API reference, deployment guides, and README files in standard English.
+- **Native Unit Test Suites**: Zero-dependency unit test suites for backend (`backend/test/ttlock.test.ts`) and frontend (`web/test/format.test.ts`) using the native Node.js 22 test runner.
+- **Automated GHCR Container Publishing**: Configured automated multi-stage Docker packaging to GitHub Container Registry (`ghcr.io/helmipradita/ttlock-backend` and `ttlock-web-nginx`).
 
 ### Changed
-- **Version Bump**: Upgraded platform release version to `1.2.0` across frontend, backend, and documentation.
-
-## [1.1.1] - 2026-10-29
-
-### Added
-- **Native Unit Test Suites**: Zero-dependency unit tests for backend (`backend/test/ttlock.test.ts`) and frontend (`web/test/format.test.ts`) using Node.js 22 built-in test runner.
-- **Timestamp Parsing Compatibility**: `formatDate` now transparently formats ISO-8601 strings, UNIX epoch millisecond numbers, and falsy inputs.
-
-### Changed
-- **Production Package Optimization**: Reclassified `shadcn` and `@tailwindcss/vite` as `devDependencies` in `web/package.json`, eliminating transitive runtime dependencies.
-- **Passcode Lifecycle Simplification**: Refactored `PasscodeModal` state synchronization to use declarative TanStack Query with retry handler.
+- **Version Bump**: Promoted platform release version to `1.2.0` across frontend, backend, container labels, and documentation.
+- **Production Package Optimization**: Pruned legacy icons, unreferenced UI components, and transitive lockfile dependencies; enforce strict TypeScript rules (`noUnusedLocals`, `noUnusedParameters`).
+- **Passcode Lifecycle Simplification**: Refactored `PasscodeModal` state synchronization to use declarative TanStack Query with retry handling.
 
 ### Fixed
-- **API Reference Default Alignment**: Synchronized `GET /api/locks/:lockId/records` default `pageSize` in documentation to match backend code (`20`).
+- **API Reference Default Alignment**: Synchronized `GET /api/locks/:lockId/records` default `pageSize` in documentation to match backend implementation (`20`).
 - **Linter & React Render Warnings**: Resolved component re-declaration warnings in `AllLockboxesSection` and `GatewaysSection` by extracting `SortHeader` outside render body.
 - **PDF Report Telemetry Mapping**: Fixed gateway station label fallback in `pdf-report.ts` prioritizing `gatewayName` over WiFi SSID.
-- **WSL2 / Linux Native Binary Bus Error**: Upgraded `oxlint` to `1.90.0` ensuring seamless linting execution.
+- **WSL2 / Linux Native Binary Bus Error**: Upgraded `oxlint` to `1.90.0` ensuring reliable local linting execution.
 
 ## [1.1.0] - 2026-10-28
 
