@@ -8,7 +8,7 @@ A modern web application for **real-time monitoring, hardware telemetry, and fle
 [![GHCR Packages](https://img.shields.io/badge/GHCR-Images_Available-2088FF?logo=github&logoColor=white)](https://github.com/helmipradita/ttlock-dashboard/pkgs/container/ttlock-backend)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](web/)
 [![Express](https://img.shields.io/badge/Express.js-Backend-black?logo=express)](backend/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)](web/tsconfig.json)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x%20%7C%206.x-3178C6?logo=typescript&logoColor=white)](web/tsconfig.json)
 
 ---
 

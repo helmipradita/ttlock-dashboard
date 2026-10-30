@@ -9,7 +9,7 @@ This document outlines the software libraries, frameworks, runtime engines, and 
 | Category | Technology | Version | Purpose & Strategic Rationale |
 |---|---|---|---|
 | **Core Framework** | React | 19.x | Modern component-based declarative user interface library delivering optimal rendering speed. |
-| **Language** | TypeScript | 5.x | Static type safety covering API contracts, telemetry payloads, and component props. |
+| **Language** | TypeScript | 6.x | Static type safety covering API contracts, telemetry payloads, and component props. |
 | **Bundler & Build Tool** | Vite | 5.4.x | Rapid Hot Module Replacement (HMR) and optimized tree-shaken production builds. |
 | **State & Data Fetching** | TanStack Query | v5 | Client-side caching, polling, auto-revalidation, and background data synchronization. |
 | **UI Primitives** | shadcn/ui + Base UI | Latest | Accessible, unstyled headless primitives styled via modern Tailwind utility classes. |
