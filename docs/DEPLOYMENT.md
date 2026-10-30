@@ -38,7 +38,11 @@ PORT=5757
 
 ## 2. Fast Track: Running Pre-Built Container Images (No Source Clone Required)
 
-If you wish to deploy the dashboard directly without compiling or checking out source files, pre-built container images are distributed via **GitHub Container Registry (GHCR)**.
+If you wish to deploy the dashboard directly without compiling or checking out source files, pre-built container images are distributed via **GitHub Container Registry (GHCR)**:
+- Backend: [`ghcr.io/helmipradita/ttlock-backend`](https://github.com/helmipradita/ttlock-dashboard/pkgs/container/ttlock-backend)
+- Web Nginx: [`ghcr.io/helmipradita/ttlock-web-nginx`](https://github.com/helmipradita/ttlock-dashboard/pkgs/container/ttlock-web-nginx)
+
+Images are published with both `:v1.2.0` (release pinning) and `:latest` tags.
 
 ### Option A: Using a Simple `docker-compose.yml` (Recommended)
 
@@ -46,7 +50,7 @@ If you wish to deploy the dashboard directly without compiling or checking out s
    ```yaml
    services:
      backend:
-       image: ghcr.io/helmipradita/ttlock-backend:latest
+       image: ghcr.io/helmipradita/ttlock-backend:v1.2.0 # or :latest
        environment:
          - TTLOCK_CLIENT_ID=your_client_id
          - TTLOCK_CLIENT_SECRET=your_client_secret
@@ -58,7 +62,7 @@ If you wish to deploy the dashboard directly without compiling or checking out s
        restart: unless-stopped
 
      web-nginx:
-       image: ghcr.io/helmipradita/ttlock-web-nginx:latest
+       image: ghcr.io/helmipradita/ttlock-web-nginx:v1.2.0 # or :latest
        ports:
          - "5757:5757"
        depends_on:
