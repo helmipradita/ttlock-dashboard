@@ -56,7 +56,8 @@ export interface GatewayLock {
   lockName: string;
   lockAlias: string;
   rssi: number | null;
-  rssiUpdateDate: number | null;
+  rssiUpdateDate?: number | null;
+  updateDate?: number | null;
 }
 
 export interface TopologyResponse {
