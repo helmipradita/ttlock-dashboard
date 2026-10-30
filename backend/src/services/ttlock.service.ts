@@ -287,10 +287,6 @@ class TTLockService {
     return all;
   }
 
-  private isCacheValid(entry: TopologyCacheEntry): boolean {
-    return Date.now() < entry.expiresAt;
-  }
-
   async getEnrichedLocks(): Promise<{ list: EnrichedLock[] }> {
     // 1. Fetch locks and all gateways in parallel
     const [allLocks, allGateways] = await Promise.all([
