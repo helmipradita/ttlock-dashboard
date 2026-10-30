@@ -25,7 +25,7 @@ If applicable, add screenshots, browser console logs, or Docker container logs (
 **Environment Information:**
  - OS: [e.g. Ubuntu 22.04, macOS, Windows 11]
  - Browser: [e.g. Chrome, Firefox, Safari]
- - Version: [e.g. 1.3.0]
+ - Version: [e.g. 1.2.0]
  - Deployment: [Docker Compose / Bare Metal Node.js]
 
 **Additional context**
