@@ -392,8 +392,8 @@ export function LockHistorySection({ lockSelect }: Props) {
                   </span>
                 </h4>
                 <div className="rounded border border-border overflow-hidden">
-                  <Table containerClassName="max-h-72 overflow-auto">
-                    <TableHeader className="sticky top-0 z-20 bg-card shadow-[0_1px_0_0_var(--border)]">
+                  <Table containerClassName="overflow-x-auto overflow-y-visible">
+                    <TableHeader>
                       <TableRow className="bg-muted/40 border-b border-border">
                         <TableHead className="w-12 text-center text-xs font-medium text-muted-foreground bg-card">#</TableHead>
                         <TableHead className="whitespace-nowrap text-xs font-medium text-muted-foreground bg-card">Timestamp</TableHead>
