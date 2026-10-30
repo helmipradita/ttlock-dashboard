@@ -393,13 +393,13 @@ export function LockHistorySection({ lockSelect }: Props) {
                 </h4>
                 <div className="rounded border border-border overflow-hidden">
                   <Table containerClassName="overflow-x-auto overflow-y-visible">
-                    <TableHeader>
-                      <TableRow className="bg-muted/40 border-b border-border">
-                        <TableHead className="w-12 text-center text-xs font-medium text-muted-foreground bg-card">#</TableHead>
-                        <TableHead className="whitespace-nowrap text-xs font-medium text-muted-foreground bg-card">Timestamp</TableHead>
-                        <TableHead className="whitespace-nowrap text-xs font-medium text-muted-foreground bg-card">Method</TableHead>
-                        <TableHead className="whitespace-nowrap text-xs font-medium text-muted-foreground bg-card">Operator</TableHead>
-                        <TableHead className="w-24 text-right text-xs font-medium text-muted-foreground bg-card">Status</TableHead>
+                    <TableHeader className="bg-muted/50 border-b border-border">
+                      <TableRow className="border-b border-border hover:bg-transparent">
+                        <TableHead className="w-12 text-center text-xs font-semibold text-foreground bg-muted/50">#</TableHead>
+                        <TableHead className="whitespace-nowrap text-xs font-semibold text-foreground bg-muted/50">Timestamp</TableHead>
+                        <TableHead className="whitespace-nowrap text-xs font-semibold text-foreground bg-muted/50">Method</TableHead>
+                        <TableHead className="whitespace-nowrap text-xs font-semibold text-foreground bg-muted/50">Operator</TableHead>
+                        <TableHead className="w-24 text-right text-xs font-semibold text-foreground bg-muted/50">Status</TableHead>
                       </TableRow>
                     </TableHeader>
                   <TableBody>
