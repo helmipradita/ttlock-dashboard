@@ -1,5 +1,6 @@
 {
-  "name": "web",
+  "name": "ttlock-web",
+  "description": "TTLock monitoring dashboard web frontend",
   "private": true,
   "version": "1.3.0",
   "type": "module",
