@@ -11,13 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Termius Open Source Program Integration**: Added official Termius sponsorship acknowledgment, backlink, and dual-theme adaptive brand assets (`.github/assets/termius-logo.png` & `termius-logo-white.png`) with explicit `#sponsors` anchor in `README.md`.
 - **Open Source Community Standards**: Established full GitHub Community Health profile (100% score) including Contributor Covenant Code of Conduct, Contributing Guidelines, Security Policy, Issue Templates, and Pull Request Template.
 - **Universal Documentation Standardization**: Harmonized all architecture, API reference, deployment guides, and README files in standard English.
-- **Native Unit Test Suites**: Zero-dependency unit test suites for backend (`backend/test/ttlock.test.ts`) and frontend (`web/test/format.test.ts`) using the native Node.js 22 test runner.
+- **Native Unit Test Suites**: Zero-dependency unit test suites for backend (`backend/test/ttlock.test.ts`) and frontend (`web/test/format.test.ts`) using the native Node.js 22 test runner, including signal staleness threshold detection tests.
 - **Automated GHCR Container Publishing**: Configured automated multi-stage Docker packaging to GitHub Container Registry (`ghcr.io/helmipradita/ttlock-backend` and `ttlock-web-nginx`).
 
 ### Changed
 - **Version Bump**: Promoted platform release version to `1.2.0` across frontend, backend, container labels, and documentation.
 - **Production Package Optimization**: Pruned legacy icons, unreferenced UI components, and transitive lockfile dependencies; enforce strict TypeScript rules (`noUnusedLocals`, `noUnusedParameters`).
 - **Passcode Lifecycle Simplification**: Refactored `PasscodeModal` state synchronization to use declarative TanStack Query with retry handling.
+- **Gateway Telemetry Synchronization**: Linked `rssiUpdateDate` and `gatewayIsOnline` in topology queries to enable stale signal detection and offline gateway indicators across the Gateway Directory.
 
 ### Fixed
 - **API Reference Default Alignment**: Synchronized `GET /api/locks/:lockId/records` default `pageSize` in documentation to match backend implementation (`20`).
