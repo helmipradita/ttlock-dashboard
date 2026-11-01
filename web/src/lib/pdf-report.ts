@@ -1,5 +1,8 @@
-import { getEnrichedLocks, getGateways, getTopology } from "@/api/client";
+import { getEnrichedLocks, getGateways } from "@/api/client";
+import type { Lock, GatewayInfo } from "@/api/types";
 import { formatDate } from "@/lib/format";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 
 export interface SignalReportRow {
   lockId: number;
@@ -12,32 +15,21 @@ export interface SignalReportRow {
 
 /**
  * Generate and download a comprehensive TTLOCK hardware telemetry and signal diagnostics PDF report.
- * Dynamically imports jsPDF and jspdf-autotable to prevent initial bundle bloat.
+ * Reuses existing in-memory data when provided to avoid redundant API calls.
  * Filename is unique: ttlock-signal-report-YYYYMMDD-HHmmss-[uuid].pdf
  */
-export async function generateTtlockPdfReport(): Promise<string> {
-  const [{ list: locks }, { list: gateways }] = await Promise.all([
-    getEnrichedLocks(),
-    getGateways(),
+export async function generateTtlockPdfReport(existingData?: {
+  locks?: Lock[];
+  gateways?: GatewayInfo[];
+}): Promise<string> {
+  const [locks, gateways] = await Promise.all([
+    existingData?.locks?.length
+      ? existingData.locks
+      : getEnrichedLocks().then((res) => res.list),
+    existingData?.gateways?.length
+      ? existingData.gateways
+      : getGateways().then((res) => res.list),
   ]);
-
-  // Fetch topology for each gateway in parallel to collect lockbox RSSI signals
-  const topologies = await Promise.all(
-    gateways.map(async (gw) => {
-      try {
-        return await getTopology(gw.gatewayId);
-      } catch {
-        return {
-          gateway: { ...gw, rssi: null },
-          locks: [],
-        };
-      }
-    })
-  );
-
-  // Dynamic import of PDF generator libraries
-  const { jsPDF } = await import("jspdf");
-  const autoTable = (await import("jspdf-autotable")).default;
 
   const doc = new jsPDF({
     orientation: "portrait",
@@ -65,28 +57,27 @@ export async function generateTtlockPdfReport(): Promise<string> {
     (l) => l.electricQuantity != null && l.electricQuantity <= 20
   );
 
-  // Map and sort all lockbox signals: WEAKEST signal first at the top
+  // Map and sort all lockbox signals directly from enriched locks without extra topology calls
   const signalRows: SignalReportRow[] = [];
-  for (const topo of topologies) {
-    for (const l of topo.locks) {
-      let quality: SignalReportRow["rssiQuality"] = "No Signal";
-      if (topo.gateway.isOnline === 0) {
-        quality = "No Signal";
-      } else if (l.rssi != null) {
-        if (l.rssi <= -85) quality = "Weak";
-        else if (l.rssi <= -75) quality = "Medium";
-        else quality = "Strong";
-      }
-
-      signalRows.push({
-        lockId: l.lockId,
-        lockName: l.lockAlias || l.lockName || String(l.lockId),
-        gatewayId: topo.gateway.gatewayId,
-        gatewayName: topo.gateway.gatewayName || topo.gateway.networkName || `GW-${topo.gateway.gatewayId}`,
-        rssi: l.rssi,
-        rssiQuality: quality,
-      });
+  for (const l of locks) {
+    if (l.hasGateway === 0 && l.gatewayId == null) continue;
+    let quality: SignalReportRow["rssiQuality"] = "No Signal";
+    if (l.gatewayIsOnline === 0) {
+      quality = "No Signal";
+    } else if (l.rssi != null) {
+      if (l.rssi <= -85) quality = "Weak";
+      else if (l.rssi <= -75) quality = "Medium";
+      else quality = "Strong";
     }
+
+    signalRows.push({
+      lockId: l.lockId,
+      lockName: l.lockAlias || l.lockName || String(l.lockId),
+      gatewayId: l.gatewayId ?? 0,
+      gatewayName: l.gatewayName || l.networkName || (l.gatewayId ? `GW-${l.gatewayId}` : "Unlinked"),
+      rssi: l.rssi ?? null,
+      rssiQuality: quality,
+    });
   }
 
   // Sort: null/no-signal and weakest numeric RSSI (< -85 dBm) prioritized at the top

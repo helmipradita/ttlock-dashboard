@@ -29,7 +29,7 @@ The repository automatically publishes two separate container packages via GitHu
 
 **Rules:**
 - Both images must always share identical tag pairs: `:vX.Y.Z` (release tag) and `:latest`.
-- Public documentation (`README.md`, `docs/DEPLOYMENT.md`) must document both `:latest` and explicit version pinning (e.g., `:v1.2.0`).
+- Public documentation (`README.md`, `docs/DEPLOYMENT.md`) must document both `:latest` and explicit version pinning (e.g., `:v1.3.0`).
 
 ---
 
@@ -49,6 +49,7 @@ The repository automatically publishes two separate container packages via GitHu
 
 ### Telemetry Consistency
 - `rssiUpdateDate` and `gatewayIsOnline` must remain unified across backend topology responses and frontend `GatewayLock` interfaces.
+- **Strict On-Demand Fetching**: Automated background polling, periodic refetch timers, and countdown intervals are strictly prohibited to prevent API quota exhaustion. All data synchronization is manual on-demand or targeted (60s per single selected gateway with hardware deduplication).
 - **Stale Signal Rule**: Readings older than 15 minutes display an amber clock icon with snapshot tooltip.
 - **Gateway Offline Rule**: When `isOnline === 0`, lock status must display `GW Offline` / `GW Down`.
 - **Mermaid Diagrams**: All sequence, flowchart, and architecture diagrams in `docs/ARCHITECTURE.md` and `README.md` must be kept strictly synchronized with live API contracts and React component trees.
@@ -94,6 +95,11 @@ cd web && npm test && npm run lint && npm run build
 | `/api/locks/:lockId/unlock` | POST | Remote unlock lock via WiFi Gateway |
 | `/api/gateways` | GET | All registered gateways |
 | `/api/gateways/:gatewayId/topology` | GET | Gateway topology (cached 30s) |
+| `/api/gateways/:gatewayId/live` | GET | Targeted single-gateway live polling (60s loop with SQLite deduplication) |
+| `/api/telemetry/snapshot` | POST | Save immediate telemetry snapshot to SQLite |
+| `/api/telemetry/fluctuations` | GET | Aggregated signal variance analytics |
+| `/api/telemetry/timeline` | GET | Chronological timeseries snapshots filtered by gateway and date |
+| `/api/telemetry/export` | GET | Export raw SQLite historical snapshots to CSV (supports ?gatewayId & ?date) |
 
 ---
 
@@ -136,14 +142,18 @@ TTLOCK/
 │   ├── package.json
 │   ├── tsconfig.json
 │   ├── test/
-│   │   └── ttlock.test.ts
+│   │   ├── ttlock.test.ts
+│   │   ├── telemetry.test.ts
+│   │   └── cron.test.ts
 │   └── src/
 │       ├── config.ts
 │       ├── main.ts
 │       ├── routes/
 │       │   └── ttlock.routes.ts
 │       └── services/
-│           └── ttlock.service.ts
+│           ├── ttlock.service.ts
+│           ├── telemetry.service.ts
+│           └── cron.service.ts
 └── web/
     ├── README.md
     ├── package.json
@@ -152,15 +162,16 @@ TTLOCK/
     ├── components.json
     ├── index.html
     ├── test/
-    │   └── format.test.ts
+    │   ├── format.test.ts
+    │   └── ledger.test.ts
     ├── public/
     │   ├── favicon.png
     │   └── ttlock-logo.webp
     └── src/
         ├── App.tsx
         ├── api/               # client.ts, types.ts
-        ├── components/        # LockHistorySection, AllLockboxesSection, PasscodeModal, UnlockTerminal, InlineTopology, etc.
-        ├── hooks/             # useTheme, useCountdown
-        ├── lib/               # format.ts, utils.ts, pdf-report.ts
+        ├── components/        # LockHistorySection, AllLockboxesSection, GatewaysSection, RetentionSection, SignalFluctuationModal, ui/*
+        ├── hooks/             # useTheme
+        ├── lib/               # format.ts, utils.ts, pdf-report.ts, pdf-retention-report.ts
         └── topology/          # topology-canvas.ts
 ```

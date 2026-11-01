@@ -2,7 +2,7 @@
 
 A modern web application for **real-time monitoring, hardware telemetry, and fleet operations** of TTLOCK Smart Locks and WiFi Gateways. Features real-time lockbox statuses, unlock logs, interactive gateway topology mapping, offline passcode generation, remote unlocking, and client-side hardware diagnostics PDF export.
 
-[![Version](https://img.shields.io/badge/Version-1.2.0-emerald.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/Version-1.3.0-emerald.svg)](CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
 [![GHCR Backend](https://img.shields.io/badge/GHCR-Backend-2088FF?logo=github&logoColor=white)](https://github.com/helmipradita/ttlock-dashboard/pkgs/container/ttlock-backend)
@@ -76,11 +76,11 @@ Choose the method that best matches your workflow:
 
 Ideal for operators running the dashboard directly on local workstations or production servers.
 
-1. Create a `docker-compose.yml` file in any directory (you can pin `:v1.2.0` or use `:latest`):
+1. Create a `docker-compose.yml` file in any directory (you can pin `:v1.3.0` or use `:latest`):
    ```yaml
    services:
      backend:
-       image: ghcr.io/helmipradita/ttlock-backend:v1.2.0 # or :latest
+       image: ghcr.io/helmipradita/ttlock-backend:v1.3.0 # or :latest
        environment:
          - TTLOCK_CLIENT_ID=your_client_id
          - TTLOCK_CLIENT_SECRET=your_client_secret
@@ -92,7 +92,7 @@ Ideal for operators running the dashboard directly on local workstations or prod
        restart: unless-stopped
 
      web-nginx:
-       image: ghcr.io/helmipradita/ttlock-web-nginx:v1.2.0 # or :latest
+       image: ghcr.io/helmipradita/ttlock-web-nginx:v1.3.0 # or :latest
        ports:
          - "5757:5757"
        depends_on:
@@ -161,6 +161,11 @@ Detailed operational guides and technical specifications are available in the `d
 | `POST` | `/api/locks/:lockId/unlock` | **Dispatch remote unlock command via connected WiFi Gateway** |
 | `GET` | `/api/gateways` | Retrieve list of all registered gateways |
 | `GET` | `/api/gateways/:gatewayId/topology` | Retrieve Gateway $\leftrightarrow$ Lockbox topology (cached for 30 seconds) |
+| `GET` | `/api/gateways/:gatewayId/live` | Targeted single-gateway live polling (60s loop with SQLite deduplication) |
+| `POST` | `/api/telemetry/snapshot` | Save immediate fleet telemetry snapshot to persistent SQLite database |
+| `GET` | `/api/telemetry/fluctuations` | Aggregated historical signal variance analytics ($\Delta\text{ RSSI}$) |
+| `GET` | `/api/telemetry/timeline` | Chronological timeseries snapshots filtered by gateway and date |
+| `GET` | `/api/telemetry/export` | Export raw SQLite historical snapshots to CSV (supports ?gatewayId & ?date) |
 
 ---
 

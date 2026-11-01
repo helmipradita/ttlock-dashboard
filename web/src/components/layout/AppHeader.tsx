@@ -1,21 +1,26 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { getAuthStatus } from "@/api/client";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getAuthStatus, saveTelemetrySnapshot } from "@/api/client";
+import type { Lock, GatewayInfo } from "@/api/types";
 import { formatDate } from "@/lib/format";
-import { User, Cpu, FileDown, Loader2, Info } from "lucide-react";
+import { User, Cpu, FileDown, Loader2, Database, Activity, CheckCircle2 } from "lucide-react";
 import { StatusBadge } from "@/components/status";
 import { ThemeToggle } from "./ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { generateTtlockPdfReport } from "@/lib/pdf-report";
+import { SignalFluctuationModal } from "@/components/SignalFluctuationModal";
 
 export function AppHeader() {
   const [downloading, setDownloading] = useState(false);
   const [downloadNotice, setDownloadNotice] = useState<string | null>(null);
+  const [savingSnapshot, setSavingSnapshot] = useState(false);
+  const [snapshotNotice, setSnapshotNotice] = useState<string | null>(null);
+  const [fluctuationOpen, setFluctuationOpen] = useState(false);
+  const queryClient = useQueryClient();
 
   const { data } = useQuery({
     queryKey: ["auth"],
     queryFn: getAuthStatus,
-    refetchInterval: 60_000,
   });
 
   async function handleDownloadPdf() {
@@ -23,13 +28,31 @@ export function AppHeader() {
     try {
       setDownloading(true);
       setDownloadNotice(null);
-      const filename = await generateTtlockPdfReport();
+      const cachedLocks = queryClient.getQueryData<{ list: Lock[] }>(["locks"])?.list;
+      const cachedGateways = queryClient.getQueryData<{ list: GatewayInfo[] }>(["gateways"])?.list;
+      const filename = await generateTtlockPdfReport({ locks: cachedLocks, gateways: cachedGateways });
       setDownloadNotice(filename);
       setTimeout(() => setDownloadNotice(null), 6000);
     } catch (err: any) {
       alert(`Failed to generate PDF report: ${err.message}`);
     } finally {
       setDownloading(false);
+    }
+  }
+
+  async function handleSaveSnapshot() {
+    if (savingSnapshot) return;
+    try {
+      setSavingSnapshot(true);
+      setSnapshotNotice(null);
+      const res = await saveTelemetrySnapshot();
+      setSnapshotNotice(`Saved ${res.savedSignals} lock signals into SQLite`);
+      queryClient.invalidateQueries({ queryKey: ["telemetry-fluctuations"] });
+      setTimeout(() => setSnapshotNotice(null), 5000);
+    } catch (err: any) {
+      alert(`Failed to save snapshot: ${err.message}`);
+    } finally {
+      setSavingSnapshot(false);
     }
   }
 
@@ -61,8 +84,39 @@ export function AppHeader() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-3 text-xs flex-wrap ml-auto">
-          {/* Download Report PDF Button with rich tooltip */}
+        <div className="flex items-center gap-2 sm:gap-2.5 text-xs flex-wrap ml-auto">
+          {/* Save Snapshot to SQLite */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleSaveSnapshot}
+            disabled={savingSnapshot}
+            className="h-8 px-2.5 sm:px-3 gap-1.5 border-border bg-background hover:bg-muted font-medium text-xs text-foreground cursor-pointer shadow-none"
+            title="Capture and store current fleet signal readings into persistent SQLite database"
+          >
+            {savingSnapshot ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
+            ) : (
+              <Database className="w-3.5 h-3.5 text-foreground" />
+            )}
+            <span className="hidden sm:inline">
+              {savingSnapshot ? "Saving..." : "Save Snapshot"}
+            </span>
+          </Button>
+
+          {/* Signal Analytics / Fluctuation Modal */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setFluctuationOpen(true)}
+            className="h-8 px-2.5 sm:px-3 gap-1.5 border-border bg-background hover:bg-muted font-medium text-xs text-foreground cursor-pointer shadow-none"
+            title="Inspect historical signal fluctuations (delta RSSI) and identify volatile lockboxes"
+          >
+            <Activity className="w-3.5 h-3.5 text-foreground" />
+            <span className="hidden sm:inline">Analytics</span>
+          </Button>
+
+          {/* Download Report PDF Button */}
           <Button
             variant="outline"
             size="sm"
@@ -77,11 +131,9 @@ export function AppHeader() {
               <FileDown className="w-3.5 h-3.5 text-foreground" />
             )}
             <span className="hidden sm:inline">
-              {downloading ? "Generating PDF..." : "Download Report (PDF)"}
+              {downloading ? "Generating PDF..." : "Download PDF"}
             </span>
-            <span className="sm:hidden">
-              {downloading ? "PDF..." : "Report"}
-            </span>
+            <span className="sm:hidden">PDF</span>
           </Button>
 
           {data?.authenticated ? (
@@ -115,7 +167,7 @@ export function AppHeader() {
         <div className="max-w-6xl mx-auto mt-2.5">
           <div className="px-3 py-1.5 rounded border border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs flex items-center justify-between gap-2">
             <div className="flex items-center gap-1.5 truncate">
-              <Info className="w-3.5 h-3.5 shrink-0" />
+              <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
               <span className="truncate">Report downloaded: <strong className="font-medium">{downloadNotice}</strong></span>
             </div>
             <button
@@ -127,6 +179,28 @@ export function AppHeader() {
           </div>
         </div>
       )}
+
+      {snapshotNotice && (
+        <div className="max-w-6xl mx-auto mt-2.5">
+          <div className="px-3 py-1.5 rounded border border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 truncate">
+              <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate"><strong className="font-medium">{snapshotNotice}</strong></span>
+            </div>
+            <button
+              onClick={() => setSnapshotNotice(null)}
+              className="text-emerald-700 dark:text-emerald-400 hover:underline text-xs shrink-0 cursor-pointer"
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
+
+      <SignalFluctuationModal
+        open={fluctuationOpen}
+        onClose={() => setFluctuationOpen(false)}
+      />
     </header>
   );
 }

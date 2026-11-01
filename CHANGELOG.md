@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-10-31
+
+### Added
+- **Signal Retention Timeseries Monitor & Executive PDF Export**: New dedicated dashboard tab featuring multi-gateway selection, custom date picker, responsive SVG signal fluctuation graph (dynamic Y-axis -20 to -100 dBm, 6 linear time ticks), and executive A4 PDF report export with health KPI tiles and color-coded telemetry status badges.
+- **Automated Hourly Telemetry Background Scheduler**: Zero-dependency Node.js background scheduler executing automated fleet-wide telemetry polling every 60 minutes with boot-time retry recovery and hardware timestamp deduplication.
+- **Native SQLite Telemetry Storage (`telemetry.db`)**: Embedded zero-dependency telemetry persistence using Node.js 22 built-in `node:sqlite` (`DatabaseSync`), mounted under `./backend/data:/app/data`.
+- **Targeted Gateway Live Monitoring (60s)**: High-resolution single-gateway polling loop with real-time countdown ticker, live in-flight indicator, and automatic signal history capture.
+- **Hardware Telemetry Deduplication**: Backend deduplication engine skips duplicate database insertions when hardware signal update timestamps (`rssiUpdateDate`) remain unchanged between polling cycles.
+- **Signal Variance & Fluctuation Modal**: Analytical dashboard computing historical signal delta ($\Delta = \text{Max} - \text{Min}$) across multi-sample windows, baseline badges (`— (Baseline)`) for single-sample entries, and volatile lockbox alerting ($\Delta \ge 15\text{ dB}$).
+- **CSV Telemetry Data Export**: Endpoint `/api/telemetry/export` for raw historical signal telemetry log downloads (supports targeted `gatewayId` and `date` filters).
+- **Last Scanned Telemetry Badges**: Gateway connected locks list displays per-lock real-time scan age, relative timestamps, and visual freshness indicator dots.
+
+### Changed
+- **API Call Rate Quota Conservation**: Eliminated frontend automated polling loops and background countdown timers, transitioning to strictly on-demand queries, single-gateway targeted monitoring, and scheduled hourly fleet snapshots.
+- **Enriched Locks Performance**: Removed N+1 `fetchLastOpen` query loop, reducing bulk ledger refresh roundtrips from ~138 to ~15 API requests while caching unlock timestamps on-demand in SQLite.
+- **Icon Scale & Semantics Normalization**: Fixed reversed Lucide WiFi glyph mappings and normalized all telemetry icons to unified 14px badges.
+- **Version Promotion**: Promoted platform release version to `1.3.0` across containers, packages, and architecture documentation.
+
 ## [1.2.0] - 2026-10-29
 
 ### Added

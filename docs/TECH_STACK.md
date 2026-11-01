@@ -11,11 +11,11 @@ This document outlines the software libraries, frameworks, runtime engines, and 
 | **Core Framework** | React | 19.x | Modern component-based declarative user interface library delivering optimal rendering speed. |
 | **Language** | TypeScript | 6.x | Static type safety covering API contracts, telemetry payloads, and component props. |
 | **Bundler & Build Tool** | Vite | 5.4.x | Rapid Hot Module Replacement (HMR) and optimized tree-shaken production builds. |
-| **State & Data Fetching** | TanStack Query | v5 | Client-side caching, polling, auto-revalidation, and background data synchronization. |
+| **State & Data Fetching** | TanStack Query | v5 | Client-side caching, on-demand revalidation, and targeted data synchronization. |
 | **UI Primitives** | shadcn/ui + Base UI | Latest | Accessible, unstyled headless primitives styled via modern Tailwind utility classes. |
 | **Styling** | Tailwind CSS | v4.x | Utility-first CSS engine with native CSS variables for responsive light and dark themes. |
 | **Iconography** | Lucide React | Latest | Clean, accessible SVG icons with consistent visual stroke weights. |
-| **PDF Reporting** | jsPDF & jspdf-autotable | v4.x / v5.x | Client-side hardware diagnostics PDF generation with lazy dynamic importing to protect initial bundle size. |
+| **PDF Reporting** | jsPDF & jspdf-autotable | v4.x / v5.x | Client-side hardware diagnostics and retention PDF generation with static module binding for container runtime stability. |
 | **Topology Rendering** | HTML5 Canvas API | Native | High-performance interactive graph visualization featuring animated edges and dragging without DOM overhead. |
 
 ---
@@ -27,6 +27,8 @@ This document outlines the software libraries, frameworks, runtime engines, and 
 | **Runtime Environment** | Node.js | 22.x (LTS) | Asynchronous, event-driven JavaScript/TypeScript runtime on the V8 engine. |
 | **HTTP Framework** | Express.js | 4.x | Lightweight, unopinionated routing engine handling REST endpoints and middleware. |
 | **Language** | TypeScript | 5.x | Enforces strict type contracts across backend business logic and TTLock Sciener API payloads. |
+| **Embedded Database** | node:sqlite (DatabaseSync) | Node 22 native | Zero-dependency local SQLite persistence for signal snapshots, gateway state, lock aliases, and unlock records. |
+| **Background Scheduler** | Native Timer Cron | Node 22 native | Zero-dependency automated background scheduler executing hourly fleet-wide telemetry polling with hardware deduplication. |
 | **Configuration** | dotenv + requireEnv | 16.x | Fail-fast environment variable validation, terminating immediately if mandatory credentials are missing. |
 | **HTTP Client** | Native Fetch API | Node 22 native | Lightweight native HTTP client executing urlencoded requests without bloated third-party dependencies. |
 | **Unit Testing** | Node.js Test Runner | Node 22 native | Zero-dependency native unit test runner with `--experimental-strip-types` and `node:test`. |

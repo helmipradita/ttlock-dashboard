@@ -58,6 +58,7 @@ export interface GatewayLock {
   rssi: number | null;
   rssiUpdateDate?: number | null;
   updateDate?: number | null;
+  lastOpen?: number | null;
 }
 
 export interface TopologyResponse {
@@ -88,4 +89,52 @@ export interface PasscodeResponse {
   description?: string | null;
   human?: string;
   ts: string;
+}
+
+export interface TelemetrySnapshotResponse {
+  ok: boolean;
+  savedGateways: number;
+  savedSignals: number;
+  recordedAt: number;
+}
+
+export interface SignalFluctuation {
+  lock_id: number;
+  lock_name: string;
+  gateway_id: number;
+  sample_count: number;
+  min_rssi: number;
+  max_rssi: number;
+  delta_rssi: number;
+  avg_rssi: number;
+  last_seen: number;
+}
+
+export interface GatewayLiveResponse {
+  gatewayId: number;
+  timestamp: number;
+  locks: GatewayLock[];
+}
+
+export interface TelemetrySnapshotItem {
+  id: number;
+  recorded_at: number;
+  lock_id: number;
+  lock_name: string;
+  gateway_id: number | null;
+  gateway_name: string | null;
+  rssi: number | null;
+  battery: number | null;
+}
+
+export interface TelemetryTimelineResponse {
+  metrics: {
+    totalSnapshots: number;
+    uniqueSessions: number;
+    uniqueLocks: number;
+    lastCapture: number | null;
+  };
+  dates: string[];
+  gateways: { gatewayId: number; gatewayName: string | null }[];
+  snapshots: TelemetrySnapshotItem[];
 }

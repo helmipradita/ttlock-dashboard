@@ -87,8 +87,8 @@ export function wifiIconForRssi(rssi: number | null | undefined): {
   color: string;
 } {
   if (rssi == null) return { Icon: WifiZero, color: "text-muted-foreground" };
-  if (rssi > -75) return { Icon: WifiHigh, color: "text-emerald-500" };
-  if (rssi > -85) return { Icon: Wifi, color: "text-amber-500" };
+  if (rssi > -75) return { Icon: Wifi, color: "text-emerald-500" };
+  if (rssi > -85) return { Icon: WifiHigh, color: "text-amber-500" };
   return { Icon: WifiLow, color: "text-red-500" };
 }
 
@@ -96,7 +96,7 @@ export function wifiIconForOnline(isOnline: number | null | undefined): {
   Icon: LucideIcon;
   color: string;
 } {
-  if (isOnline === 1) return { Icon: WifiHigh, color: "text-emerald-500" };
+  if (isOnline === 1) return { Icon: Wifi, color: "text-emerald-500" };
   if (isOnline === 0) return { Icon: WifiOff, color: "text-muted-foreground" };
   return { Icon: WifiZero, color: "text-muted-foreground" };
 }

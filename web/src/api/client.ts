@@ -6,6 +6,10 @@ import type {
   TopologyResponse,
   UnlockResponse,
   PasscodeResponse,
+  TelemetrySnapshotResponse,
+  SignalFluctuation,
+  GatewayLiveResponse,
+  TelemetryTimelineResponse,
 } from "./types";
 
 async function apiFetch<T>(path: string): Promise<T> {
@@ -107,3 +111,42 @@ export async function getLockPasscode(lockId: number): Promise<PasscodeResponse>
     };
   }
 }
+
+export function saveTelemetrySnapshot(): Promise<TelemetrySnapshotResponse> {
+  return fetch("/api/telemetry/snapshot", { method: "POST" }).then((res) => {
+    if (!res.ok) throw new Error(`Snapshot failed: ${res.status}`);
+    return res.json();
+  });
+}
+
+export function getTelemetryFluctuations(): Promise<{ list: SignalFluctuation[] }> {
+  return apiFetch<{ list: SignalFluctuation[] }>("/api/telemetry/fluctuations");
+}
+
+export function getTelemetryTimeline(params: {
+  gatewayId?: number;
+  gatewayIds?: number[];
+  lockId?: number;
+  date?: string;
+  limit?: number;
+} = {}): Promise<TelemetryTimelineResponse> {
+  const q = new URLSearchParams();
+  if (params.gatewayIds && params.gatewayIds.length > 0) {
+    q.set("gatewayIds", params.gatewayIds.join(","));
+  } else if (params.gatewayId) {
+    q.set("gatewayId", String(params.gatewayId));
+  }
+  if (params.lockId) q.set("lockId", String(params.lockId));
+  if (params.date) q.set("date", params.date);
+  if (params.limit) q.set("limit", String(params.limit));
+
+  const queryStr = q.toString() ? `?${q.toString()}` : "";
+  return apiFetch<TelemetryTimelineResponse>(`/api/telemetry/timeline${queryStr}`);
+}
+
+export function getGatewayLive(gatewayId: number, gatewayName?: string): Promise<GatewayLiveResponse> {
+  const query = gatewayName ? `?name=${encodeURIComponent(gatewayName)}` : "";
+  return apiFetch<GatewayLiveResponse>(`/api/gateways/${gatewayId}/live${query}`);
+}
+
+export const TELEMETRY_EXPORT_CSV_URL = "/api/telemetry/export";

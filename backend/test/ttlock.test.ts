@@ -8,6 +8,7 @@ test("TTLOCK_ERROR_CODES contains standard Sciener error mappings", () => {
   assert.equal(TTLOCK_ERROR_CODES[-4043], "Remote unlock not enabled (enable in TTLOCK app lock settings)");
   assert.equal(TTLOCK_ERROR_CODES[10003], "Invalid token");
   assert.equal(TTLOCK_ERROR_CODES[10004], "Invalid grant (token expired/revoked)");
+  assert.equal(TTLOCK_ERROR_CODES[30007], "Exceeded monthly limit for API calls");
 });
 
 test("Environment validation requirement check", () => {

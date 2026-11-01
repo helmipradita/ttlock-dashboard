@@ -37,7 +37,7 @@ web/
 │   │   ├── PasscodeModal.tsx
 │   │   ├── UnlockTerminal.tsx
 │   │   └── status.tsx
-│   ├── hooks/                 # useTheme, useCountdown
+│   ├── hooks/                 # useTheme
 │   ├── lib/                   # Formatting utilities, styling, pdf-report.ts
 │   └── topology/              # Dynamic Canvas topology graph renderer
 ├── test/

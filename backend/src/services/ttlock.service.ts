@@ -51,7 +51,6 @@ export interface GatewaySignalEntry {
 }
 
 const TOPOLOGY_CACHE_TTL_MS = 30 * 1000;
-const CONCURRENCY_LIMIT = 5;
 
 export const TTLOCK_ERROR_CODES: Record<number, string> = {
   0: "Success",
@@ -87,6 +86,7 @@ export const TTLOCK_ERROR_CODES: Record<number, string> = {
   30004: "Invalid userid to delete",
   30005: "Not custom app user",
   30006: "Exceeds API call number limit",
+  30007: "Exceeded monthly limit for API calls",
   80000: "Date must be current time (±5 min)",
   80002: "Invalid JSON format",
   90000: "Internal server error",
@@ -94,13 +94,19 @@ export const TTLOCK_ERROR_CODES: Record<number, string> = {
 
 class TTLockService {
   private tokenData: TokenData | null = null;
+  private lastAuthError: string | null = null;
   private topologyCache = new Map<string, TopologyCacheEntry>();
   private topologyInflight = new Map<string, Promise<any>>();
 
   async initialize(): Promise<void> {
     console.log("[TTLock] Initializing - logging in...");
-    await this.login();
-    console.log("[TTLock] Login successful. Token expires at:", new Date(this.tokenData!.expiresAt).toISOString());
+    try {
+      await this.login();
+      console.log("[TTLock] Login successful. Token expires at:", new Date(this.tokenData!.expiresAt).toISOString());
+    } catch (err: any) {
+      this.lastAuthError = err.message || "Unknown login error";
+      console.error("[TTLock] Login failed during startup:", this.lastAuthError);
+    }
   }
 
   private async login(): Promise<void> {
@@ -122,7 +128,13 @@ class TTLockService {
       throw new Error(`TTLock login failed: ${res.status} ${text}`);
     }
 
-    const data = await res.json() as OAuthResponse;
+    const data = (await res.json()) as any;
+    if (!data.access_token || typeof data.expires_in !== "number") {
+      const errCode = data.errcode !== undefined ? `[Error ${data.errcode}] ` : "";
+      const reason = TTLOCK_ERROR_CODES[data.errcode] || data.errmsg || data.error_description || JSON.stringify(data);
+      throw new Error(`TTLock authentication rejected: ${errCode}${reason}`);
+    }
+
     this.tokenData = {
       accessToken: data.access_token,
       refreshToken: data.refresh_token,
@@ -130,6 +142,7 @@ class TTLockService {
       expiresAt: Date.now() + data.expires_in * 1000,
       scope: data.scope,
     };
+    this.lastAuthError = null;
   }
 
   private async refreshToken(): Promise<void> {
@@ -178,15 +191,22 @@ class TTLockService {
     return this.tokenData!.accessToken;
   }
 
-  getAuthStatus() {
+  async getAuthStatus() {
     if (!this.tokenData) {
-      return { authenticated: false };
+      try {
+        await this.login();
+      } catch (err: any) {
+        return {
+          authenticated: false,
+          error: this.lastAuthError,
+        };
+      }
     }
     return {
       authenticated: true,
-      uid: this.tokenData.uid,
-      expiresAt: new Date(this.tokenData.expiresAt).toISOString(),
-      scope: this.tokenData.scope,
+      uid: this.tokenData!.uid,
+      expiresAt: new Date(this.tokenData!.expiresAt).toISOString(),
+      scope: this.tokenData!.scope,
       username: config.username,
     };
   }
@@ -294,10 +314,11 @@ class TTLockService {
       this.getAllGatewayList().catch(() => []),
     ]);
 
-    // 2. Fetch gateway topologies in parallel (uses topologyCache) to aggregate lock signals
+    // 2. Query topology only for active gateways (skip gateways with 0 locks) to save API calls
+    const activeGateways = allGateways.filter((gw: any) => (gw.lockNum ?? 0) > 0);
     const topologies = await Promise.all(
-      allGateways.map((gw: any) =>
-        this.getGatewayTopology(String(gw.gatewayId)).catch(() => null)
+      activeGateways.map((gw: any) =>
+        this.getGatewayTopology(String(gw.gatewayId), gw).catch(() => null)
       )
     );
 
@@ -331,44 +352,20 @@ class TTLockService {
       }
     }
 
-    const fetchLastOpen = async (lockId: string): Promise<number | null> => {
-      try {
-        const { list } = await this.post<{
-          list: any[];
-        }>("/v3/lockRecord/list", {
-          lockId,
-          pageNo: "1",
-          pageSize: "1",
-          startDate: "0",
-          endDate: "0",
-        });
-        return list?.length > 0 ? list[0].lockDate : null;
-      } catch {
-        return null;
-      }
-    };
-
-    const results: EnrichedLock[] = [];
-    for (let i = 0; i < allLocks.length; i += CONCURRENCY_LIMIT) {
-      const batch = allLocks.slice(i, i + CONCURRENCY_LIMIT);
-      const batchResults = await Promise.all(
-        batch.map(async (lock) => {
-          const lastOpen = await fetchLastOpen(lock.lockId);
-          const signal = signalMap.get(lock.lockId);
-          return {
-            ...lock,
-            lastOpen,
-            rssi: signal?.rssi ?? null,
-            rssiUpdateDate: signal?.rssiUpdateDate ?? null,
-            gatewayId: signal?.gatewayId ?? null,
-            gatewayName: signal?.gatewayName ?? null,
-            networkName: signal?.networkName ?? null,
-            gatewayIsOnline: signal?.gatewayIsOnline ?? (lock.hasGateway === 1 ? 0 : null),
-          };
-        }),
-      );
-      results.push(...batchResults);
-    }
+    // 4. Construct enriched locks without N+1 lockRecord calls (fetched on-demand during lock inspection)
+    const results: EnrichedLock[] = allLocks.map((lock) => {
+      const signal = signalMap.get(lock.lockId);
+      return {
+        ...lock,
+        lastOpen: null,
+        rssi: signal?.rssi ?? null,
+        rssiUpdateDate: signal?.rssiUpdateDate ?? null,
+        gatewayId: signal?.gatewayId ?? null,
+        gatewayName: signal?.gatewayName ?? null,
+        networkName: signal?.networkName ?? null,
+        gatewayIsOnline: signal?.gatewayIsOnline ?? (lock.hasGateway === 1 ? 0 : null),
+      };
+    });
 
     return { list: results };
   }
@@ -461,7 +458,7 @@ class TTLockService {
     }
   }
 
-  async getGatewayTopology(gatewayId: string): Promise<any> {
+  async getGatewayTopology(gatewayId: string, gatewayInfo?: any): Promise<any> {
     const cached = this.topologyCache.get(gatewayId);
     if (cached && Date.now() < cached.expiresAt) return cached.data;
 
@@ -474,8 +471,11 @@ class TTLockService {
           gatewayId,
         });
 
-        const { list: allGateways } = await this.getGatewayList();
-        const gw = allGateways.find((g: any) => String(g.gatewayId) === String(gatewayId));
+        let gw = gatewayInfo;
+        if (!gw) {
+          const { list: allGateways } = await this.getGatewayList();
+          gw = allGateways.find((g: any) => String(g.gatewayId) === String(gatewayId));
+        }
 
         const result = {
           gateway: gw || { gatewayId: Number(gatewayId) },
@@ -499,6 +499,25 @@ class TTLockService {
 
     this.topologyInflight.set(gatewayId, fetchPromise);
     return fetchPromise;
+  }
+
+  async getGatewayLive(gatewayId: string): Promise<any> {
+    const { list: locks } = await this.post<{ list: any[] }>("/v3/gateway/listLock", {
+      gatewayId,
+    });
+
+    return {
+      gatewayId: Number(gatewayId),
+      timestamp: Date.now(),
+      locks: (locks || []).map((l: any) => ({
+        lockId: l.lockId,
+        lockMac: l.lockMac,
+        lockName: l.lockName,
+        lockAlias: l.lockAlias,
+        rssi: l.rssi,
+        rssiUpdateDate: l.updateDate ?? null,
+      })),
+    };
   }
 }
 

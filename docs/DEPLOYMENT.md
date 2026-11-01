@@ -42,7 +42,7 @@ If you wish to deploy the dashboard directly without compiling or checking out s
 - Backend: [`ghcr.io/helmipradita/ttlock-backend`](https://github.com/helmipradita/ttlock-dashboard/pkgs/container/ttlock-backend)
 - Web Nginx: [`ghcr.io/helmipradita/ttlock-web-nginx`](https://github.com/helmipradita/ttlock-dashboard/pkgs/container/ttlock-web-nginx)
 
-Images are published with both `:v1.2.0` (release pinning) and `:latest` tags.
+Images are published with both `:v1.3.0` (release pinning) and `:latest` tags.
 
 ### Option A: Using a Simple `docker-compose.yml` (Recommended)
 
@@ -50,7 +50,7 @@ Images are published with both `:v1.2.0` (release pinning) and `:latest` tags.
    ```yaml
    services:
      backend:
-       image: ghcr.io/helmipradita/ttlock-backend:v1.2.0 # or :latest
+       image: ghcr.io/helmipradita/ttlock-backend:v1.3.0 # or :latest
        environment:
          - TTLOCK_CLIENT_ID=your_client_id
          - TTLOCK_CLIENT_SECRET=your_client_secret
@@ -62,7 +62,7 @@ Images are published with both `:v1.2.0` (release pinning) and `:latest` tags.
        restart: unless-stopped
 
      web-nginx:
-       image: ghcr.io/helmipradita/ttlock-web-nginx:v1.2.0 # or :latest
+       image: ghcr.io/helmipradita/ttlock-web-nginx:v1.3.0 # or :latest
        ports:
          - "5757:5757"
        depends_on:

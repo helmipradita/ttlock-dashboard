@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getEnrichedLocks } from "@/api/client";
 import type { Lock } from "@/api/types";
@@ -12,13 +12,10 @@ import {
   TableRow,
   TableCell,
 } from "@/components/ui/table";
-import { useCountdown } from "@/hooks/useCountdown";
-import { relativeTime, batteryLevel } from "@/lib/format";
+import { batteryLevel } from "@/lib/format";
 import { UnlockTerminal } from "@/components/UnlockTerminal";
 import {
   Lock as LockIcon,
-  Pause,
-  Play,
   RefreshCw,
   ChevronRight,
   BatteryLow,
@@ -36,7 +33,6 @@ type SortKey =
   | "lockId"
   | "lockName"
   | "lockAlias"
-  | "lastOpen"
   | "electricQuantity"
   | "hasGateway"
   | "rssi"
@@ -84,7 +80,7 @@ function LockboxSortHeader({ field, children, sortKey, sortDir, onToggle }: Sort
         <span>{children}</span>
         {isActive ? (
           <span className="text-foreground text-xs">{sortDir === "asc" ? "↑" : "↓"}</span>
-        ) : sortKey === null && (field === "hasGateway" || field === "lastOpen") ? (
+        ) : sortKey === null && field === "hasGateway" ? (
           <span className="text-muted-foreground/40 text-xs">{field === "hasGateway" ? "↑" : "↓"}</span>
         ) : null}
       </span>
@@ -93,9 +89,8 @@ function LockboxSortHeader({ field, children, sortKey, sortDir, onToggle }: Sort
 }
 
 export function AllLockboxesSection({ onLockSelect, selectedLockId }: Props) {
-  const [sortKey, setSortKey] = useState<SortKey | null>(null);
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
-  const [paused, setPaused] = useState(true);
+  const [sortKey, setSortKey] = useState<SortKey | null>("lockAlias");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [filter, setFilter] = useState<TriageFilter>("all");
   const [searchFilter, setSearchFilter] = useState("");
   const [unlockTarget, setUnlockTarget] = useState<{ id: number; name: string } | null>(null);
@@ -103,16 +98,7 @@ export function AllLockboxesSection({ onLockSelect, selectedLockId }: Props) {
   const query = useQuery({
     queryKey: ["locks"],
     queryFn: getEnrichedLocks,
-    refetchInterval: paused ? false : 300_000,
   });
-
-  const countdown = useCountdown(
-    300,
-    useCallback(() => {
-      query.refetch();
-    }, [query]),
-    !paused
-  );
 
   const rawList = query.data?.list ?? EMPTY_LOCKS;
 
@@ -184,7 +170,7 @@ export function AllLockboxesSection({ onLockSelect, selectedLockId }: Props) {
       copy.sort((a, b) => {
         const g = (b.hasGateway ?? 0) - (a.hasGateway ?? 0);
         if (g !== 0) return g;
-        return (b.lastOpen ?? 0) - (a.lastOpen ?? 0);
+        return (b.rssi ?? -999) - (a.rssi ?? -999);
       });
       return copy;
     }
@@ -193,7 +179,6 @@ export function AllLockboxesSection({ onLockSelect, selectedLockId }: Props) {
       let vb: number | string;
       switch (sortKey) {
         case "lockId":
-        case "lastOpen":
         case "electricQuantity":
         case "hasGateway":
           va = (a[sortKey] as number) ?? 0;
@@ -255,33 +240,19 @@ export function AllLockboxesSection({ onLockSelect, selectedLockId }: Props) {
             <Button
               variant="outline"
               size="sm"
-              className="h-7 px-2.5 text-xs gap-1.5 border-border shadow-none"
-              onClick={() => setPaused((p) => !p)}
-              title={paused ? "Resume automated polling timer" : "Pause polling timer to prevent data refresh while inspecting"}
+              disabled={query.isFetching}
+              className="h-7 px-2.5 text-xs gap-1.5 border-border shadow-none cursor-pointer"
+              onClick={() => query.refetch()}
+              title="Fetch fresh data from TTLOCK server"
             >
-              {paused ? <Play className="w-3 h-3" /> : <Pause className="w-3 h-3" />}
-              <span>{paused ? "Resume" : "Pause"}</span>
+              <RefreshCw className={`w-3.5 h-3.5 ${query.isFetching ? "animate-spin text-primary" : ""}`} />
+              <span>{query.isFetching ? "Refreshing..." : "Refresh"}</span>
             </Button>
-            <span
-              className="text-muted-foreground text-xs tabular-nums hidden sm:inline"
-              title="Time until next automated data sync from TTLOCK Open Platform"
-            >
-              {paused ? "Paused (quota safe)" : `Sync ${countdown.display}`}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 px-2.5 text-xs gap-1.5 border-border shadow-none"
-              onClick={() => {
-                setPaused(false);
-                countdown.reset();
-                query.refetch();
-              }}
-              title="Force immediate data refetch from TTLOCK server"
-            >
-              <RefreshCw className="w-3 h-3" />
-              <span>Refresh</span>
-            </Button>
+            {query.dataUpdatedAt > 0 && !query.isFetching && (
+              <span className="text-muted-foreground text-[11px] tabular-nums hidden sm:inline">
+                Updated {new Date(query.dataUpdatedAt).toLocaleTimeString()}
+              </span>
+            )}
           </div>
         </div>
 
@@ -364,7 +335,7 @@ export function AllLockboxesSection({ onLockSelect, selectedLockId }: Props) {
               type="text"
               value={searchFilter}
               onChange={(e) => setSearchFilter(e.target.value)}
-              placeholder="Filter ledger rows..."
+              placeholder="Filter ledger rows"
               className="w-full h-7 pl-8 pr-7 text-xs bg-muted/30 border border-border rounded-md text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-foreground"
             />
             {searchFilter && (
@@ -377,24 +348,15 @@ export function AllLockboxesSection({ onLockSelect, selectedLockId }: Props) {
             )}
           </div>
         </div>
-      </div>
 
-      {/* Responsive Table Wrapper */}
-      <div>
-        {query.isError && (
-          <p className="px-5 py-3 text-xs text-red-500 bg-red-500/10 border-b border-red-500/20">
-            Error: {(query.error as Error).message}
-          </p>
-        )}
 
-        <Table containerClassName="overflow-visible">
+                <Table containerClassName="overflow-visible">
           <TableHeader className="sticky top-[57px] z-20 bg-card shadow-[0_1px_0_0_var(--border)]">
             <TableRow className="bg-muted/40 border-b border-border">
               <TableHead className="w-6 bg-card" />
               <LockboxSortHeader field="lockId" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort}>Lock ID</LockboxSortHeader>
               <LockboxSortHeader field="lockName" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort}>Name</LockboxSortHeader>
               <LockboxSortHeader field="lockAlias" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort}>Alias</LockboxSortHeader>
-              <LockboxSortHeader field="lastOpen" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort}>Last Open</LockboxSortHeader>
               <LockboxSortHeader field="electricQuantity" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort}>Battery</LockboxSortHeader>
               <LockboxSortHeader field="rssi" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort}>Signal</LockboxSortHeader>
               <LockboxSortHeader field="gatewayName" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort}>Gateway / WiFi</LockboxSortHeader>
@@ -427,9 +389,6 @@ export function AllLockboxesSection({ onLockSelect, selectedLockId }: Props) {
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground truncate max-w-[160px]">
                     {lock.lockAlias || "None"}
-                  </TableCell>
-                  <TableCell className="whitespace-nowrap text-muted-foreground text-xs w-32 tabular-nums">
-                    {relativeTime(lock.lastOpen)}
                   </TableCell>
                   <TableCell className="whitespace-nowrap w-24">
                     <span className="inline-flex items-center gap-1.5 text-xs tabular-nums">

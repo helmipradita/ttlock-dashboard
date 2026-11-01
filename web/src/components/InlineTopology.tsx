@@ -27,7 +27,6 @@ export function InlineTopology({
   const query = useQuery({
     queryKey: ["topology", gatewayId],
     queryFn: () => getTopology(gatewayId),
-    refetchInterval: false,
   });
 
   const setupCanvas = useCallback(() => {
@@ -85,7 +84,7 @@ export function InlineTopology({
           <span className="font-medium text-foreground">{gatewayName}</span>
           <span className="text-muted-foreground tabular-nums">({lockNum} locks)</span>
           <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 rounded">
-            BLE link
+            Wireless link
           </span>
         </div>
         <div className="flex gap-1.5 items-center">
@@ -142,7 +141,7 @@ export function InlineTopology({
 
         <canvas
           ref={canvasRef}
-          aria-label="Interactive BLE gateway and lockbox topology map"
+          aria-label="Interactive gateway and lockbox topology map"
           className="cursor-grab rounded"
           style={{
             display: query.isLoading || query.isError || (query.data && query.data.locks.length === 0) ? "none" : "block",

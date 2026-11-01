@@ -212,6 +212,53 @@ Retrieves all registered gateways linked to the developer account.
 ### `GET /api/gateways/:gatewayId/topology`
 Retrieves the communication topology of a single gateway, including in-range lockboxes and their respective RSSI dBm values.
 
+### `GET /api/gateways/:gatewayId/live?name=...`
+Performs fresh single-call live telemetry polling for a targeted gateway (60s loop) and automatically persists readings into local SQLite with deduplication.
+
+**Query Parameters:**
+- `name` (optional): Human-readable gateway identifier or network name.
+
+**Response:**
+```json
+{
+  "gatewayId": 2422312,
+  "locks": [
+    {
+      "lockId": 35350422,
+      "lockName": "Facility Unit - 3",
+      "rssi": -66,
+      "rssiUpdateDate": 1730388900000
+    }
+  ],
+  "timestamp": 1730388900000
+}
+```
+
+## 4. Telemetry Retention & Analysis Endpoints
+
+### `POST /api/telemetry/snapshot`
+Saves an instantaneous snapshot of all online gateways and lockbox signals to the local SQLite database.
+
+### `GET /api/telemetry/fluctuations`
+Returns aggregated historical variance metrics ($\Delta\text{ RSSI}$, sample count, min/max, average) for triage of unstable lockboxes.
+
+### `GET /api/telemetry/timeline`
+Retrieves filtered chronological timeseries snapshots, available capture dates, and distinct gateway lists from local SQLite database.
+
+**Query Parameters:**
+- `gatewayId` (optional): Filter snapshots by target gateway ID.
+- `gatewayIds` (optional): Comma-separated list of target gateway IDs for multi-gateway inspection (e.g. `?gatewayIds=2422968,2425106`).
+- `date` (optional): Filter snapshots by capture date (`YYYY-MM-DD`).
+- `lockId` (optional): Filter snapshots by specific lockbox ID.
+- `limit` (optional): Maximum rows to return (default: 300).
+
+### `GET /api/telemetry/export`
+Exports raw SQLite historical signal snapshots in CSV format. Supports optional filtering by `gatewayId` and `date`.
+
+**Query Parameters:**
+- `gatewayId` (optional): Export only records matching the target gateway ID.
+- `date` (optional): Export only records captured on the specified date (`YYYY-MM-DD`).
+
 > **Caching Behavior:** Results are cached in-memory for **30 seconds** with single-flight request coalescing to protect TTLOCK API rate limits.
 
 **Example Response:**

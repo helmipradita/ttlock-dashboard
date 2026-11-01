@@ -177,7 +177,7 @@ export function UnlockTerminal({ lockId, lockName, open, onClose }: Props) {
             </div>
             <ul className="space-y-1 text-muted-foreground pl-4 list-disc text-xs">
               <li>
-                <strong className="text-foreground font-medium">Gateway Proximity:</strong> Lockbox must be within BLE radio range of an active, online TTLOCK gateway.
+                <strong className="text-foreground font-medium">Gateway Proximity:</strong> Lockbox must be within wireless radio range of an active, online TTLOCK gateway.
               </li>
               <li>
                 <strong className="text-foreground font-medium">Remote Unlock Enabled:</strong> The remote unlock switch must be enabled in the TTLOCK lock configuration.

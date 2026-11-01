@@ -4,7 +4,8 @@ import { AppHeader } from "@/components/layout/AppHeader";
 import { LockHistorySection } from "@/components/LockHistorySection";
 import { AllLockboxesSection } from "@/components/AllLockboxesSection";
 import { GatewaysSection } from "@/components/GatewaysSection";
-import { Lock, Network } from "lucide-react";
+import { RetentionSection } from "@/components/RetentionSection";
+import { Lock, Network, History } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 
 interface LockSelect {
@@ -69,11 +70,17 @@ export default function App() {
                 <Network className="w-3.5 h-3.5" />
                 <span>Gateways</span>
               </TabsTrigger>
+              <TabsTrigger value="retention" className="gap-1.5 text-xs px-3 py-1 font-medium">
+                <History className="w-3.5 h-3.5" />
+                <span>Signal Retention</span>
+              </TabsTrigger>
             </TabsList>
 
-            <span className="text-xs text-muted-foreground hidden sm:inline">
-              Press <kbd className="px-1.5 py-0.5 rounded border border-border bg-muted text-foreground font-medium text-xs">/</kbd> to search
-            </span>
+            {tab === "locks" && (
+              <span className="text-xs text-muted-foreground hidden sm:inline">
+                Press <kbd className="px-1.5 py-0.5 rounded border border-border bg-muted text-foreground font-medium text-xs">/</kbd> to search
+              </span>
+            )}
           </div>
 
           <TabsContent value="locks" className="space-y-6 mt-4">
@@ -90,6 +97,10 @@ export default function App() {
 
           <TabsContent value="gateways" className="mt-4">
             <GatewaysSection onOpenLock={handleOpenLock} />
+          </TabsContent>
+
+          <TabsContent value="retention" className="mt-4">
+            <RetentionSection onOpenLock={handleOpenLock} />
           </TabsContent>
         </Tabs>
       </main>

@@ -51,13 +51,15 @@ export function SignalDot({
   gatewayIsOnline?: number | null;
   size?: "xs" | "sm";
 }) {
+  const iconSize = size === "xs" ? "w-3.5 h-3.5" : "w-4 h-4";
+
   if (gatewayIsOnline === 0) {
     return (
       <span
-        className="inline-flex items-center gap-1 text-xs text-muted-foreground whitespace-nowrap"
+        className="inline-flex items-center gap-1.5 text-xs text-muted-foreground whitespace-nowrap"
         title="Gateway is offline: lockbox remote telemetry disconnected"
       >
-        <WifiOff className={`${size === "xs" ? "w-3 h-3" : "w-3.5 h-3.5"} text-red-500/80 shrink-0`} />
+        <WifiOff className={`${iconSize} text-red-500/80 shrink-0`} />
         <span className="text-red-600 dark:text-red-400 font-medium">GW Offline</span>
       </span>
     );
@@ -66,7 +68,7 @@ export function SignalDot({
   if (rssi == null) {
     return (
       <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground whitespace-nowrap">
-        <WifiZero className={size === "xs" ? "w-3 h-3" : "w-3.5 h-3.5"} />
+        <WifiZero className={`${iconSize} text-muted-foreground shrink-0`} />
         <span>No signal</span>
       </span>
     );
@@ -78,7 +80,6 @@ export function SignalDot({
 
   const { Icon, color } = wifiIconForRssi(rssi);
   const label = rssi > -75 ? "Strong" : rssi > -85 ? "Medium" : "Weak";
-  const iconSize = size === "xs" ? "w-3 h-3" : "w-3.5 h-3.5";
 
   const tooltip = rssiUpdateDate
     ? `Signal: ${rssi} dBm (${label}) • Last scanned: ${timeAgo} (${new Date(rssiUpdateDate).toLocaleTimeString()})${isStale ? " • Stale snapshot" : ""}`
@@ -96,7 +97,7 @@ export function SignalDot({
           className="inline-flex items-center text-amber-500 hover:text-amber-400 cursor-help"
           title={tooltip}
         >
-          <Clock className="w-3 h-3" />
+          <Clock className={`${iconSize} shrink-0`} />
         </span>
       ) : (
         <span className="text-muted-foreground/60 text-[11px] hidden sm:inline">({label})</span>

@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { getLock, getLockRecords, getLockGateway, getLocks } from "@/api/client";
+import { getLock, getLockRecords, getLockGateway, getEnrichedLocks } from "@/api/client";
 import type { LockRecord } from "@/api/types";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   formatDate,
+  relativeTime,
   batteryLevel,
   LOCK_RECORD_TYPES,
 } from "@/lib/format";
@@ -48,6 +49,7 @@ function BatteryIcon({ level }: { level: number | null | undefined }) {
 }
 
 export function LockHistorySection({ lockSelect }: Props) {
+  const [prevLockSelect, setPrevLockSelect] = useState<{ id: number; n: number } | null>(null);
   const [searchId, setSearchId] = useState("");
   const [activeId, setActiveId] = useState("");
   const [page, setPage] = useState(1);
@@ -56,13 +58,13 @@ export function LockHistorySection({ lockSelect }: Props) {
   const [showDropdown, setShowDropdown] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
-  const [prevLockSelect, setPrevLockSelect] = useState(lockSelect);
   if (lockSelect && lockSelect !== prevLockSelect) {
     setPrevLockSelect(lockSelect);
     const id = String(lockSelect.id);
     setSearchId(id);
     setActiveId(id);
     setPage(1);
+    setShowDropdown(false);
   }
 
   // Click outside to close dropdown
@@ -77,8 +79,8 @@ export function LockHistorySection({ lockSelect }: Props) {
   }, []);
 
   const allLocksQuery = useQuery({
-    queryKey: ["locks-list"],
-    queryFn: getLocks,
+    queryKey: ["locks"],
+    queryFn: getEnrichedLocks,
     staleTime: 60_000,
   });
 
@@ -94,10 +96,16 @@ export function LockHistorySection({ lockSelect }: Props) {
       .slice(0, 8);
   }, [allLocksQuery.data, searchId]);
 
+  const selectedFromList = useMemo(() => {
+    if (!activeId) return null;
+    return (allLocksQuery.data?.list ?? []).find((l) => String(l.lockId) === activeId) ?? null;
+  }, [allLocksQuery.data, activeId]);
+
   const lockQuery = useQuery({
     queryKey: ["lock", activeId],
     queryFn: () => getLock(activeId),
     enabled: !!activeId,
+    staleTime: 60_000,
   });
 
   const recordsQuery = useQuery({
@@ -109,7 +117,7 @@ export function LockHistorySection({ lockSelect }: Props) {
   const gatewayQuery = useQuery({
     queryKey: ["gateway", activeId],
     queryFn: () => getLockGateway(activeId),
-    enabled: !!activeId,
+    enabled: !!activeId && selectedFromList?.hasGateway !== 0 && !selectedFromList?.gatewayId,
   });
 
   function handleSearch(targetId?: string) {
@@ -142,11 +150,23 @@ export function LockHistorySection({ lockSelect }: Props) {
     handleSearch(strId);
   }
 
-  const lock = lockQuery.data;
+  const lock = selectedFromList
+    ? { ...selectedFromList, ...(lockQuery.data || {}) }
+    : lockQuery.data;
   const records = recordsQuery.data;
   const gateway = gatewayQuery.data?.list?.[0];
   const battery = batteryLevel(lock?.electricQuantity);
-  const gw = lock?.hasGateway === 1 ? gateway : null;
+  const gw = lock?.hasGateway === 1 ? (gateway ?? (selectedFromList?.gatewayId ? {
+    gatewayId: selectedFromList.gatewayId,
+    gatewayName: selectedFromList.gatewayName ?? undefined,
+    gatewayMac: "",
+    networkName: selectedFromList.networkName ?? "",
+    isOnline: selectedFromList.gatewayIsOnline ?? 1,
+    lockNum: 0,
+    gatewayVersion: 0,
+    rssi: selectedFromList.rssi,
+    rssiUpdateDate: selectedFromList.rssiUpdateDate,
+  } : null)) : null;
 
   return (
     <Card className="overflow-visible relative z-30">
@@ -161,7 +181,7 @@ export function LockHistorySection({ lockSelect }: Props) {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
               <Input
                 id="lock-search"
-                placeholder="Search Lock ID, Name, or Alias (press / to focus)..."
+                placeholder="Search Lock ID, Name, or Alias (press / to focus)"
                 value={searchId}
                 onChange={(e) => {
                   setSearchId(e.target.value);
@@ -333,6 +353,23 @@ export function LockHistorySection({ lockSelect }: Props) {
                 <InfoItem label="Lock ID" value={String(lock.lockId)} />
                 <InfoItem label="Model" value={lock.modelNum} />
                 <InfoItem label="Firmware" value={lock.firmwareRevision} />
+                <InfoItem
+                  label="Last Unlock"
+                  value={
+                    records?.list?.[0] ? (
+                      <span className="font-medium text-foreground tabular-nums">
+                        {relativeTime(records.list[0].lockDate)}{" "}
+                        <span className="text-muted-foreground/80 font-normal">
+                          ({formatDate(records.list[0].lockDate).split(", ")[1]})
+                        </span>
+                      </span>
+                    ) : recordsQuery.isLoading ? (
+                      "Loading..."
+                    ) : (
+                      "—"
+                    )
+                  }
+                />
               </div>
             </div>
 
@@ -375,7 +412,7 @@ export function LockHistorySection({ lockSelect }: Props) {
                   )}
                 </div>
               ) : lock.hasGateway === 0 ? (
-                <p className="text-xs text-muted-foreground">No gateway associated (Offline BLE mode only)</p>
+                <p className="text-xs text-muted-foreground">No gateway associated (Offline direct mode only)</p>
               ) : (
                 <p className="text-xs text-muted-foreground">Gateway information unavailable</p>
               )}

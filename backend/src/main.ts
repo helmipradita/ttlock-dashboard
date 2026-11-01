@@ -3,6 +3,7 @@ import cors from "cors";
 import { config } from "./config";
 import { ttlockService } from "./services/ttlock.service";
 import ttlockRoutes from "./routes/ttlock.routes";
+import { startTelemetryCron } from "./services/cron.service";
 
 const app = express();
 
@@ -16,6 +17,7 @@ async function start() {
     await ttlockService.initialize();
     app.listen(config.port, () => {
       console.log(`[TTLock] Server running at http://localhost:${config.port}`);
+      startTelemetryCron();
     });
   } catch (err) {
     console.error("[TTLock] Failed to start:", err);
