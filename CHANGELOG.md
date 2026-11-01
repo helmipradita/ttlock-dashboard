@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.1] - 2026-11-01
+
+### Added
+- **Developer Makefile Tooling**: Added unified `Makefile` providing standardized automation commands (`make setup`, `make up`, `make down`, `make restart`, `make rebuild`, `make logs`, `make test`, `make lint`, `make clean`).
+- **Fail-Fast Port Validation**: Enforced strict fail-fast validation for the `PORT` environment variable on backend boot to prevent silent fallback or misconfigured container networking.
+- **Pre-built Container Volume Persistence**: Documented explicit volume bind mounts (`./data:/app/data`) for pre-built GHCR Docker Compose and `docker run` execution to guarantee SQLite database persistence across updates.
+
+### Changed
+- **Deployment Documentation Synchronization**: Enhanced `README.md` and `docs/DEPLOYMENT.md` with port remap guidelines and quick-start Makefile workflows.
+- **Version Promotion**: Promoted platform release version to `1.3.1` across containers, packages, and architecture documentation.
+
 ## [1.3.0] - 2026-10-31
 
 ### Added

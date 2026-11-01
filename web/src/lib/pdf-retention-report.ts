@@ -57,7 +57,7 @@ export async function generateRetentionPdfReport({
   doc.setFontSize(7.5);
   doc.setTextColor(148, 163, 184); // slate-400
   doc.text(
-    `Enterprise Hardware Diagnostics & Telemetry Variance • Generated: ${new Date().toLocaleString()} • Version 1.3.0`,
+    `Enterprise Hardware Diagnostics & Telemetry Variance • Generated: ${new Date().toLocaleString()} • Version 1.3.1`,
     margin + 6,
     currentY + 14.5
   );

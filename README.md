@@ -2,7 +2,7 @@
 
 A modern web application for **real-time monitoring, hardware telemetry, and fleet operations** of TTLOCK Smart Locks and WiFi Gateways. Features real-time lockbox statuses, unlock logs, interactive gateway topology mapping, offline passcode generation, remote unlocking, and client-side hardware diagnostics PDF export.
 
-[![Version](https://img.shields.io/badge/Version-1.3.0-emerald.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/Version-1.3.1-emerald.svg)](CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
 [![GHCR Backend](https://img.shields.io/badge/GHCR-Backend-2088FF?logo=github&logoColor=white)](https://github.com/helmipradita/ttlock-dashboard/pkgs/container/ttlock-backend)
@@ -76,11 +76,11 @@ Choose the method that best matches your workflow:
 
 Ideal for operators running the dashboard directly on local workstations or production servers.
 
-1. Create a `docker-compose.yml` file in any directory (you can pin `:v1.3.0` or use `:latest`):
+1. Create a `docker-compose.yml` file in any directory (you can pin `:v1.3.1` or use `:latest`):
    ```yaml
    services:
      backend:
-       image: ghcr.io/helmipradita/ttlock-backend:v1.3.0 # or :latest
+       image: ghcr.io/helmipradita/ttlock-backend:v1.3.1 # or :latest
        environment:
          - TTLOCK_CLIENT_ID=your_client_id
          - TTLOCK_CLIENT_SECRET=your_client_secret
@@ -89,12 +89,14 @@ Ideal for operators running the dashboard directly on local workstations or prod
          - PORT=5000
        expose:
          - "5000"
+       volumes:
+         - ./data:/app/data
        restart: unless-stopped
 
      web-nginx:
-       image: ghcr.io/helmipradita/ttlock-web-nginx:v1.3.0 # or :latest
+       image: ghcr.io/helmipradita/ttlock-web-nginx:v1.3.1 # or :latest
        ports:
-         - "5757:5757"
+         - "5757:5757" # Remap host port if 5757 conflicts (e.g. "5858:5757")
        depends_on:
          - backend
        restart: unless-stopped
@@ -109,7 +111,7 @@ Ideal for operators running the dashboard directly on local workstations or prod
 
 ---
 
-### 💻 Option 2: Run from Source Code (Clone Repository)
+### 💻 Option 2: Run from Source Code (Clone Repository with Makefile)
 
 Ideal for developers customizing or extending the codebase.
 
@@ -118,18 +120,21 @@ Ideal for developers customizing or extending the codebase.
 git clone https://github.com/helmipradita/ttlock-dashboard.git
 cd ttlock-dashboard
 
-# 2. Configure environment credentials
-cp backend/.env.example backend/.env
-# Populate TTLOCK_CLIENT_ID, TTLOCK_CLIENT_SECRET, TTLOCK_USERNAME, and TTLOCK_PASSWORD_MD5 in backend/.env
+# 2. Setup environment configuration
+make setup
+# Populate TTLOCK_CLIENT_ID, TTLOCK_CLIENT_SECRET, TTLOCK_USERNAME, TTLOCK_PASSWORD_MD5, and PORT in backend/.env
 
-# 3. Build and launch services
-docker compose up -d --build
+# 3. Launch application services
+make up
 
-# 4. Open browser
+# Or use standard docker compose:
+# docker compose up -d --build
+
+# 4. Open dashboard
 # http://localhost:5757
 ```
 
-> **Build Tip:** You **do not need** to execute `npm run build` locally before running `docker compose up`. The Dockerfiles leverage multi-stage container builds and `.dockerignore` filters for optimal compilation.
+> **Makefile Shortcuts:** Use `make help` to inspect available automation targets (`make up`, `make down`, `make logs`, `make rebuild`, `make test`). You **do not need** to execute `npm run build` locally on the host; Docker handles compilation via multi-stage builds.
 
 ---
 
