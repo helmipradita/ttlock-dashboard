@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.2] - 2026-11-01
+
+### Added
+- **Weakest-First Telemetry Triage Sorting**: Updated `RetentionSection` card grid to display connected lockboxes ordered ascending by latest RSSI (lowest dBm / weakest signal first).
+- **Parity Signal Color Mapping**: Bound SVG chart path strokes and card status badges to synchronized color instances (`colorMap`) to prevent visual divergence during sort operations.
+- **Signal Quality Verification Test Suite**: Added `web/test/pdf-table.test.ts` covering ascending sort stability and color tier evaluation across Weak, Medium, and Strong thresholds.
+
+### Fixed
+- **PDF Report Table Index Alignment**: Resolved index lookup in `autoTable` `didParseCell` hook by referencing `sortedLockSeries` rather than the unsorted sequence, correcting signal badge and background coloring.
+- **PDF Summary Table Column Scoping**: Constrained signal quality highlighting strictly to the *Latest RSSI* and *Quality* columns for cleaner presentation.
+
 ## [1.3.1] - 2026-11-01
 
 ### Added

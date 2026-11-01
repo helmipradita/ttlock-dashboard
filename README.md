@@ -2,7 +2,7 @@
 
 A modern web application for **real-time monitoring, hardware telemetry, and fleet operations** of TTLOCK Smart Locks and WiFi Gateways. Features real-time lockbox statuses, unlock logs, interactive gateway topology mapping, offline passcode generation, remote unlocking, and client-side hardware diagnostics PDF export.
 
-[![Version](https://img.shields.io/badge/Version-1.3.1-emerald.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/Version-1.3.2-emerald.svg)](CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
 [![GHCR Backend](https://img.shields.io/badge/GHCR-Backend-2088FF?logo=github&logoColor=white)](https://github.com/helmipradita/ttlock-dashboard/pkgs/container/ttlock-backend)
@@ -76,11 +76,11 @@ Choose the method that best matches your workflow:
 
 Ideal for operators running the dashboard directly on local workstations or production servers.
 
-1. Create a `docker-compose.yml` file in any directory (you can pin `:v1.3.1` or use `:latest`):
+1. Create a `docker-compose.yml` file in any directory (you can pin `:v1.3.2` or use `:latest`):
    ```yaml
    services:
      backend:
-       image: ghcr.io/helmipradita/ttlock-backend:v1.3.1 # or :latest
+       image: ghcr.io/helmipradita/ttlock-backend:v1.3.2 # or :latest
        environment:
          - TTLOCK_CLIENT_ID=your_client_id
          - TTLOCK_CLIENT_SECRET=your_client_secret
@@ -94,7 +94,7 @@ Ideal for operators running the dashboard directly on local workstations or prod
        restart: unless-stopped
 
      web-nginx:
-       image: ghcr.io/helmipradita/ttlock-web-nginx:v1.3.1 # or :latest
+       image: ghcr.io/helmipradita/ttlock-web-nginx:v1.3.2 # or :latest
        ports:
          - "5757:5757" # Remap host port if 5757 conflicts (e.g. "5858:5757")
        depends_on:

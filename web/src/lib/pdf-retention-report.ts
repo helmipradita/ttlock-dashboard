@@ -57,7 +57,7 @@ export async function generateRetentionPdfReport({
   doc.setFontSize(7.5);
   doc.setTextColor(148, 163, 184); // slate-400
   doc.text(
-    `Enterprise Hardware Diagnostics & Telemetry Variance • Generated: ${new Date().toLocaleString()} • Version 1.3.1`,
+    `Enterprise Hardware Diagnostics & Telemetry Variance • Generated: ${new Date().toLocaleString()} • Version 1.3.2`,
     margin + 6,
     currentY + 14.5
   );
@@ -272,10 +272,17 @@ export async function generateRetentionPdfReport({
   doc.setFontSize(7.2);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(100, 116, 139);
-  doc.text("Sorted by Station & Signal Strength", pageWidth - margin, currentY, { align: "right" });
+  doc.text("Sorted by Signal Strength (Weakest First)", pageWidth - margin, currentY, { align: "right" });
   currentY += 3;
 
-  const summaryRows = lockSeries.map((s) => {
+  // Sort by weakest signal first (lowest / most negative RSSI)
+  const sortedLockSeries = [...lockSeries].sort((a, b) => {
+    const rssiA = a.points[a.points.length - 1]?.rssi ?? 0;
+    const rssiB = b.points[b.points.length - 1]?.rssi ?? 0;
+    return rssiA - rssiB;
+  });
+
+  const summaryRows = sortedLockSeries.map((s) => {
     const latestPt = s.points[s.points.length - 1];
     const minP = Math.min(...s.points.map((p) => p.rssi));
     const maxP = Math.max(...s.points.map((p) => p.rssi));
@@ -321,11 +328,10 @@ export async function generateRetentionPdfReport({
     margin: { left: margin, right: margin, bottom: 14 },
     didParseCell: (data) => {
       if (data.section === "body" && summaryRows.length > 0) {
-        const item = lockSeries[data.row.index];
+        const item = sortedLockSeries[data.row.index];
         const latestPt = item?.points[item.points.length - 1];
-        const minP = item ? Math.min(...item.points.map((p) => p.rssi)) : -999;
 
-        // Quality Badge and RSSI Highlight
+        // Highlight ONLY Column 3 (Latest RSSI) and Column 4 (Quality)
         if (data.column.index === 3 || data.column.index === 4) {
           if (latestPt && latestPt.rssi <= -85) {
             data.cell.styles.textColor = [185, 28, 28]; // red-700
@@ -340,12 +346,6 @@ export async function generateRetentionPdfReport({
             data.cell.styles.fontStyle = "bold";
             data.cell.styles.fillColor = [220, 252, 231]; // emerald-100
           }
-        }
-
-        // Min/Max weak alert
-        if (data.column.index === 5 && minP <= -85) {
-          data.cell.styles.textColor = [185, 28, 28];
-          data.cell.styles.fontStyle = "bold";
         }
       }
     },

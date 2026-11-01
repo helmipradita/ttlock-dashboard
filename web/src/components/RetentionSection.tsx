@@ -137,6 +137,24 @@ export function RetentionSection({ onOpenLock }: Props) {
     return Array.from(set).sort((a, b) => a - b);
   }, [lockSeries]);
 
+  // Color map ensuring chart line color and card badge color always match
+  const colorMap = useMemo(() => {
+    const map = new Map<number, string>();
+    lockSeries.forEach((s, idx) => {
+      map.set(s.lockId, LINE_COLORS[idx % LINE_COLORS.length]);
+    });
+    return map;
+  }, [lockSeries]);
+
+  // Sorted lockboxes by weakest latest signal first (lowest / most negative RSSI)
+  const sortedLockSeries = useMemo(() => {
+    return [...lockSeries].sort((a, b) => {
+      const rssiA = a.points[a.points.length - 1]?.rssi ?? 0;
+      const rssiB = b.points[b.points.length - 1]?.rssi ?? 0;
+      return rssiA - rssiB;
+    });
+  }, [lockSeries]);
+
   // Selected gateway names
   const selectedGatewaysInfo = useMemo(() => {
     return selectedGatewayIds.map((id) => {
@@ -457,7 +475,7 @@ export function RetentionSection({ onOpenLock }: Props) {
 
                 {/* Plot Lines & Dots per Lockbox Series */}
                 {lockSeries.map((series, sIdx) => {
-                  const color = LINE_COLORS[sIdx % LINE_COLORS.length];
+                  const color = colorMap.get(series.lockId) ?? LINE_COLORS[sIdx % LINE_COLORS.length];
                   const sortedPoints = [...series.points].sort((a, b) => a.timestamp - b.timestamp);
                   if (sortedPoints.length === 0) return null;
 
@@ -556,10 +574,20 @@ export function RetentionSection({ onOpenLock }: Props) {
 
             {/* Lockbox Series Legend & Stats Bar */}
             <div className="pt-4 border-t border-border/40 space-y-2.5">
-              <h4 className="text-xs font-semibold text-foreground">Lockboxes in this Gateway:</h4>
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <h4 className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                  <span>Lockboxes in this Gateway</span>
+                  <span className="font-normal text-muted-foreground text-[11px]">
+                    (Sorted by Weakest Signal First)
+                  </span>
+                </h4>
+                <span className="text-[11px] text-muted-foreground tabular-nums">
+                  {sortedLockSeries.length} unit{sortedLockSeries.length > 1 ? "s" : ""} monitored
+                </span>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                {lockSeries.map((s, sIdx) => {
-                  const color = LINE_COLORS[sIdx % LINE_COLORS.length];
+                {sortedLockSeries.map((s, sIdx) => {
+                  const color = colorMap.get(s.lockId) ?? LINE_COLORS[sIdx % LINE_COLORS.length];
                   const latestPt = s.points[s.points.length - 1];
                   const minP = Math.min(...s.points.map((p) => p.rssi));
                   const maxP = Math.max(...s.points.map((p) => p.rssi));

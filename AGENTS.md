@@ -29,7 +29,7 @@ The repository automatically publishes two separate container packages via GitHu
 
 **Rules:**
 - Both images must always share identical tag pairs: `:vX.Y.Z` (release tag) and `:latest`.
-- Public documentation (`README.md`, `docs/DEPLOYMENT.md`) must document both `:latest` and explicit version pinning (e.g., `:v1.3.1`).
+- Public documentation (`README.md`, `docs/DEPLOYMENT.md`) must document both `:latest` and explicit version pinning (e.g., `:v1.3.2`).
 
 ---
 
