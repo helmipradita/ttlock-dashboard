@@ -7,7 +7,7 @@ Comprehensive operational guidelines, architectural rules, and decision workflow
 ## 1. Project Overview & Program Standards
 
 - **Purpose**: Real-time IoT fleet telemetry, remote control, and hardware diagnostics for TTLOCK Smart Locks and WiFi Gateways.
-  - Explicit navigation anchor `` must precede the sponsor section.
+- **License**: MIT License, non-commercial open source, 100% English documentation.
 - **GitHub Community Standards**: Mandatory 100% Community Health Score (`CODE_OF_CONDUCT.md`, `CONTRIBUTING.md`, `SECURITY.md`, Issue & PR templates).
 
 ---
@@ -114,7 +114,6 @@ TTLOCK/
 │   │   ├── config.yml
 │   │   └── feature_request.md
 │   ├── PULL_REQUEST_TEMPLATE.md
-│   ├── assets/
 │   └── workflows/
 │       └── docker-publish.yml
 ├── .dockerignore

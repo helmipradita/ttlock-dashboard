@@ -174,7 +174,6 @@ Detailed operational guides and technical specifications are available in the `d
 
 ---
 
-
 ## 📄 License
 
 This project is open-source software licensed under the [**MIT License**](LICENSE).
