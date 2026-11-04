@@ -61,7 +61,7 @@ export function SignalFluctuationModal({ open, onClose }: Props) {
                 disabled={query.isFetching}
                 title="Refresh fluctuation statistics"
               >
-                <RefreshCw className={`w-3 h-3 ${query.isFetching ? "animate-spin" : ""}`} />
+                <RefreshCw className={`w-3 h-3 ${query.isFetching ? "motion-safe:animate-spin" : ""}`} />
                 <span>Refresh</span>
               </Button>
               <a
@@ -79,7 +79,7 @@ export function SignalFluctuationModal({ open, onClose }: Props) {
 
         {query.isLoading ? (
           <div className="py-12 text-center text-xs text-muted-foreground flex flex-col items-center gap-2">
-            <RefreshCw className="w-4 h-4 animate-spin" />
+            <RefreshCw className="w-4 h-4 motion-safe:animate-spin" />
             <span>Analyzing historical signal snapshots from SQLite...</span>
           </div>
         ) : list.length === 0 ? (

@@ -34,11 +34,13 @@ import {
   X,
   Radio,
   Loader2,
+  ExternalLink,
 } from "lucide-react";
 import { StatusBadge, SignalDot } from "@/components/status";
 
 interface Props {
   lockSelect?: { id: number; n: number } | null;
+  onGatewaySelect?: (gatewayId: number) => void;
 }
 
 function BatteryIcon({ level }: { level: number | null | undefined }) {
@@ -48,7 +50,7 @@ function BatteryIcon({ level }: { level: number | null | undefined }) {
   return <BatteryFull className="w-4 h-4 text-emerald-500" />;
 }
 
-export function LockHistorySection({ lockSelect }: Props) {
+export function LockHistorySection({ lockSelect, onGatewaySelect }: Props) {
   const [prevLockSelect, setPrevLockSelect] = useState<{ id: number; n: number } | null>(null);
   const [searchId, setSearchId] = useState("");
   const [activeId, setActiveId] = useState("");
@@ -218,12 +220,12 @@ export function LockHistorySection({ lockSelect }: Props) {
                   <div className="px-3 py-1.5 text-xs font-medium text-muted-foreground bg-muted/40 border-b border-border flex items-center justify-between">
                     <span>Suggested Lockboxes</span>
                     {allLocksQuery.isFetching && (
-                      <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />
+                      <Loader2 className="w-3 h-3 motion-safe:animate-spin text-muted-foreground" />
                     )}
                   </div>
                   {allLocksQuery.isLoading ? (
                     <div className="p-4 text-xs text-muted-foreground text-center flex items-center justify-center gap-2">
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <Loader2 className="w-3.5 h-3.5 motion-safe:animate-spin" />
                       Loading lockboxes...
                     </div>
                   ) : filteredLocks.length === 0 ? (
@@ -293,17 +295,17 @@ export function LockHistorySection({ lockSelect }: Props) {
         {lock && (
           <div className="space-y-4">
             {/* Status row */}
-            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg bg-muted/50 border">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                   <LockIcon className="w-4 h-4 text-primary" />
                 </div>
-                <div>
-                  <p className="font-semibold text-sm">{lock.lockName || lock.lockAlias}</p>
+                <div className="min-w-0">
+                  <p className="font-semibold text-sm truncate">{lock.lockName || lock.lockAlias}</p>
                   <p className="text-xs text-muted-foreground">ID: <span className="tabular-nums font-medium">{lock.lockId}</span></p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                 <StatusBadge
                   variant={lock.hasGateway === 1 ? "online" : "offline"}
                   label={lock.hasGateway === 1 ? "With Gateway" : "No Gateway"}
@@ -312,7 +314,7 @@ export function LockHistorySection({ lockSelect }: Props) {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="gap-1.5 border-border shadow-none"
+                  className="gap-1.5 border-border shadow-none whitespace-nowrap"
                   title="Generate 6-hour offline one-time PIN for physical keypad (works without gateway/internet)"
                   onClick={() => setPasscodeOpen(true)}
                 >
@@ -322,7 +324,7 @@ export function LockHistorySection({ lockSelect }: Props) {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="gap-1.5 border-border shadow-none"
+                  className="gap-1.5 border-border shadow-none whitespace-nowrap"
                   title="Send instant remote unlock command over connected WiFi gateway"
                   onClick={() => setUnlockOpen(true)}
                 >
@@ -337,7 +339,7 @@ export function LockHistorySection({ lockSelect }: Props) {
               <h4 className="text-xs font-medium text-muted-foreground mb-2">
                 Lockbox Telemetry
               </h4>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-muted/20 border border-border rounded-lg p-3.5 text-xs">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 bg-muted/20 border border-border rounded-lg p-3 sm:p-3.5 text-xs">
                 <InfoItem label="Name" value={lock.lockName} />
                 <InfoItem label="Alias" value={lock.lockAlias} />
                 <InfoItem
@@ -375,9 +377,22 @@ export function LockHistorySection({ lockSelect }: Props) {
 
             {/* Gateway */}
             <div className="rounded-lg p-3.5 border border-border bg-muted/20">
-              <h4 className="text-xs font-medium text-muted-foreground mb-2">
-                Linked Gateway
-              </h4>
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-xs font-medium text-muted-foreground">
+                  Linked Gateway
+                </h4>
+                {gw?.gatewayId && onGatewaySelect && (
+                  <button
+                    type="button"
+                    onClick={() => onGatewaySelect(gw.gatewayId)}
+                    className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline cursor-pointer"
+                    title={`Jump to Gateway #${gw.gatewayId}`}
+                  >
+                    <span>View in Gateways</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
               {gw ? (
                 <div className="flex flex-wrap items-center gap-4 text-xs">
                   {gw.gatewayName && (
@@ -558,11 +573,11 @@ function InfoItem({
   value: React.ReactNode;
 }) {
   return (
-    <div>
+    <div className="min-w-0">
       <dt className="text-xs text-muted-foreground mb-1">
         {label}
       </dt>
-      <dd className="text-xs font-medium text-foreground">{value || "—"}</dd>
+      <dd className="text-xs font-medium text-foreground min-w-0 truncate" title={typeof value === "string" ? value : undefined}>{value || "—"}</dd>
     </div>
   );
 }

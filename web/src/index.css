@@ -139,4 +139,7 @@
   [data-slot="tabs-trigger"] {
     cursor: pointer;
   }
+  [data-slot="table-container"] {
+    -webkit-overflow-scrolling: touch;
+  }
 }

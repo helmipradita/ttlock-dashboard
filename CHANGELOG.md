@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.3] - 2026-11-04
+
+### Added
+- **Gateway Cross-Navigation**: Implemented interactive gateway link routing in `AllLockboxesSection` and `LockHistorySection` that automatically redirects to the Gateways directory, auto-expands the matching gateway, and scrolls it into view.
+- **Fail-Fast Public Web Port**: Enforced mandatory `WEB_PORT` interpolation in `docker-compose.yml` (`${WEB_PORT:?...}:5757`) and mapped `backend/.env` across all `Makefile` commands to prevent silent default port conflicts.
+- **Mobile Last-Open Telemetry**: Restored the Last Open timestamp on mobile and tablet screens within the Gateway directory expanded lock list.
+
+### Fixed
+- **Table Header Overlap Elimination**: Removed conflicting `sticky top-[57px]` positioning across `AllLockboxesSection` and `GatewaysSection` tables, enforcing solid headers and defensive `min-w` constraints (`min-w-[860px]` on lockboxes, `min-w-[780px]` on gateways, and `min-w-[760px]` on retention logs) with touch momentum scrolling.
+- **AppHeader Mobile Layout Balance**: Redesigned header layout into a cohesive 2-tier structure on mobile/tablet (brand & identity on row 1, evenly distributed touch-friendly action buttons on row 2) and a balanced 1-tier bar on desktop.
+- **Signal Retention Control Deck Cohesion**: Re-architected toolbar grouping Target Gateway and Date selectors directly beside the Chart/Table view mode toggle.
+- **Reduced Motion Accessibility**: Applied `motion-safe:animate-spin` across all loader and spinner elements.
+
 ## [1.3.2] - 2026-11-01
 
 ### Added

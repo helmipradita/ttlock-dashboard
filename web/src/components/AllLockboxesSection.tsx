@@ -26,6 +26,7 @@ import {
   Radio,
   Search,
   X,
+  ExternalLink,
 } from "lucide-react";
 import { StatusBadge, SignalDot } from "@/components/status";
 
@@ -49,6 +50,7 @@ type TriageFilter =
 interface Props {
   onLockSelect: (lockId: number) => void;
   selectedLockId?: number | null;
+  onGatewaySelect?: (gatewayId: number) => void;
 }
 
 function BatteryIcon({ level }: { level: number | null | undefined }) {
@@ -88,7 +90,7 @@ function LockboxSortHeader({ field, children, sortKey, sortDir, onToggle }: Sort
   );
 }
 
-export function AllLockboxesSection({ onLockSelect, selectedLockId }: Props) {
+export function AllLockboxesSection({ onLockSelect, selectedLockId, onGatewaySelect }: Props) {
   const [sortKey, setSortKey] = useState<SortKey | null>("lockAlias");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [filter, setFilter] = useState<TriageFilter>("all");
@@ -245,7 +247,7 @@ export function AllLockboxesSection({ onLockSelect, selectedLockId }: Props) {
               onClick={() => query.refetch()}
               title="Fetch fresh data from TTLOCK server"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${query.isFetching ? "animate-spin text-primary" : ""}`} />
+              <RefreshCw className={`w-3.5 h-3.5 ${query.isFetching ? "motion-safe:animate-spin text-primary" : ""}`} />
               <span>{query.isFetching ? "Refreshing..." : "Refresh"}</span>
             </Button>
             {query.dataUpdatedAt > 0 && !query.isFetching && (
@@ -350,10 +352,10 @@ export function AllLockboxesSection({ onLockSelect, selectedLockId }: Props) {
         </div>
 
 
-                <Table containerClassName="overflow-visible">
-          <TableHeader className="sticky top-[57px] z-20 bg-card shadow-[0_1px_0_0_var(--border)]">
-            <TableRow className="bg-muted/40 border-b border-border">
-              <TableHead className="w-6 bg-card" />
+        <Table containerClassName="overflow-x-auto rounded-lg border border-border" className="min-w-[860px]">
+          <TableHeader className="bg-muted/50 border-b border-border">
+            <TableRow className="border-b border-border hover:bg-transparent">
+              <TableHead className="w-6" />
               <LockboxSortHeader field="lockId" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort}>Lock ID</LockboxSortHeader>
               <LockboxSortHeader field="lockName" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort}>Name</LockboxSortHeader>
               <LockboxSortHeader field="lockAlias" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort}>Alias</LockboxSortHeader>
@@ -361,7 +363,7 @@ export function AllLockboxesSection({ onLockSelect, selectedLockId }: Props) {
               <LockboxSortHeader field="rssi" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort}>Signal</LockboxSortHeader>
               <LockboxSortHeader field="gatewayName" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort}>Gateway / WiFi</LockboxSortHeader>
               <LockboxSortHeader field="hasGateway" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort}>Status</LockboxSortHeader>
-              <TableHead className="w-24 text-right text-xs font-medium text-muted-foreground bg-card">Action</TableHead>
+              <TableHead className="w-24 text-right text-xs font-medium text-muted-foreground">Action</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -410,19 +412,34 @@ export function AllLockboxesSection({ onLockSelect, selectedLockId }: Props) {
                   </TableCell>
                   <TableCell className="text-xs truncate max-w-[170px]">
                     {lock.hasGateway === 1 ? (
-                      <div
-                        className="flex flex-col min-w-0"
-                        title={`${lock.gatewayName || `GW #${lock.gatewayId || ""}`}${lock.networkName ? ` (${lock.networkName})` : ""}`}
+                      <button
+                        type="button"
+                        disabled={!lock.gatewayId}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (lock.gatewayId && onGatewaySelect) {
+                            onGatewaySelect(lock.gatewayId);
+                          }
+                        }}
+                        className="flex flex-col min-w-0 text-left group cursor-pointer disabled:cursor-default"
+                        title={
+                          lock.gatewayId
+                            ? `Go to Gateway #${lock.gatewayId} (${lock.gatewayName || "GW"})`
+                            : `${lock.gatewayName || "Linked GW"}${lock.networkName ? ` (${lock.networkName})` : ""}`
+                        }
                       >
-                        <span className="truncate font-medium text-foreground">
-                          {lock.gatewayName || (lock.gatewayId ? `GW-${lock.gatewayId}` : "Linked GW")}
+                        <span className="truncate font-medium text-foreground group-hover:text-primary transition-colors inline-flex items-center gap-1">
+                          <span>{lock.gatewayName || (lock.gatewayId ? `GW-${lock.gatewayId}` : "Linked GW")}</span>
+                          {lock.gatewayId && (
+                            <ExternalLink className="w-2.5 h-2.5 opacity-0 group-hover:opacity-100 transition-opacity text-primary shrink-0" />
+                          )}
                         </span>
                         {lock.networkName && (
                           <span className="truncate text-[11px] text-muted-foreground">
                             {lock.networkName}
                           </span>
                         )}
-                      </div>
+                      </button>
                     ) : (
                       <span className="text-muted-foreground/40 text-xs">—</span>
                     )}

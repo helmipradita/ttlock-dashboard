@@ -32,6 +32,7 @@ type SortKey = "gatewayId" | "gatewayName" | "gatewayMac" | "networkName" | "loc
 
 interface Props {
   onOpenLock: (lockId: number) => void;
+  gatewaySelect?: { id: number; n: number } | null;
 }
 
 interface SortHeaderProps {
@@ -67,8 +68,9 @@ function normalizeGatewayNameForSort(name: string | null | undefined): string {
     .trim();
 }
 
-export function GatewaysSection({ onOpenLock }: Props) {
+export function GatewaysSection({ onOpenLock, gatewaySelect }: Props) {
   const queryClient = useQueryClient();
+  const [prevGatewaySelect, setPrevGatewaySelect] = useState<{ id: number; n: number } | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("isOnline");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [expandedId, setExpandedId] = useState<number | null>(null);
@@ -80,6 +82,23 @@ export function GatewaysSection({ onOpenLock }: Props) {
   const [isLiveFetching, setIsLiveFetching] = useState(false);
   const [liveError, setLiveError] = useState<string | null>(null);
   const [unlockTarget, setUnlockTarget] = useState<{ id: number; name: string } | null>(null);
+
+  if (gatewaySelect && gatewaySelect !== prevGatewaySelect) {
+    setPrevGatewaySelect(gatewaySelect);
+    setExpandedId(gatewaySelect.id);
+  }
+
+  useEffect(() => {
+    if (gatewaySelect?.id) {
+      const timer = setTimeout(() => {
+        const el = document.getElementById(`gateway-row-${gatewaySelect.id}`);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [gatewaySelect]);
 
   const query = useQuery({
     queryKey: ["gateways"],
@@ -240,30 +259,32 @@ export function GatewaysSection({ onOpenLock }: Props) {
           </p>
         )}
 
-        <Table containerClassName="overflow-visible">
-          <TableHeader className="sticky top-[57px] z-20 bg-card shadow-[0_1px_0_0_var(--border)]">
-            <TableRow className="bg-muted/40 border-b border-border">
-              <TableHead className="w-8 bg-card" />
+        <Table containerClassName="overflow-x-auto rounded-lg border border-border" className="min-w-[780px]">
+          <TableHeader className="bg-muted/50 border-b border-border">
+            <TableRow className="border-b border-border hover:bg-transparent">
+              <TableHead className="w-8" />
               <GatewaySortHeader field="gatewayId" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort}>Gateway ID</GatewaySortHeader>
               <GatewaySortHeader field="gatewayName" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort}>Gateway Name</GatewaySortHeader>
               <GatewaySortHeader field="gatewayMac" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort}>MAC</GatewaySortHeader>
               <GatewaySortHeader field="networkName" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort}>WiFi Network</GatewaySortHeader>
               <GatewaySortHeader field="lockNum" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort}>Locks</GatewaySortHeader>
               <GatewaySortHeader field="isOnline" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort}>Status</GatewaySortHeader>
-              <TableHead className="w-28 text-right text-xs font-medium text-muted-foreground bg-card">Action</TableHead>
+              <TableHead className="w-28 text-right text-xs font-medium text-muted-foreground">Action</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {sorted.map((gw: GatewayInfo) => {
               const isExpanded = expandedId === gw.gatewayId;
               const isTopologyVisible = showTopologyFor === gw.gatewayId;
+              const isTargeted = gatewaySelect?.id === gw.gatewayId;
               return (
                 <Fragment key={gw.gatewayId}>
                   <TableRow
+                    id={`gateway-row-${gw.gatewayId}`}
                     data-state={isExpanded ? "expanded" : undefined}
                     className={`cursor-pointer transition-colors border-b border-border/60 ${
                       isExpanded ? "bg-muted/50" : "hover:bg-muted/30"
-                    }`}
+                    } ${isTargeted ? "ring-1 ring-primary/60 bg-primary/5" : ""}`}
                     onClick={() => {
                       setExpandedId((prev) => {
                         const next = prev === gw.gatewayId ? null : gw.gatewayId;
@@ -365,7 +386,7 @@ export function GatewaysSection({ onOpenLock }: Props) {
                                       <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/30">
                                         <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping shrink-0" />
                                         <span>Next poll: <strong className="tabular-nums font-semibold">{secondsUntilNext}s</strong></span>
-                                        {isLiveFetching && <RefreshCw className="w-2.5 h-2.5 animate-spin shrink-0 ml-0.5" />}
+                                        {isLiveFetching && <RefreshCw className="w-2.5 h-2.5 motion-safe:animate-spin shrink-0 ml-0.5" />}
                                       </span>
                                       {lastSyncTime && (
                                         <span className="text-[11px] text-muted-foreground tabular-nums">
@@ -486,13 +507,13 @@ export function GatewaysSection({ onOpenLock }: Props) {
                                   </div>
 
                                   {/* Last Open Timestamp */}
-                                  <div className="text-[11px] text-muted-foreground whitespace-nowrap min-w-0 hidden lg:inline">
+                                  <div className="text-[11px] text-muted-foreground whitespace-nowrap min-w-0 inline-flex items-center gap-1">
                                     <span>Last Open: </span>
                                     <strong className="text-foreground font-normal tabular-nums">
                                       {lock.lastOpen ? (
                                         <>
                                           {relativeTime(lock.lastOpen)}{" "}
-                                          <span className="text-muted-foreground/60">
+                                          <span className="text-muted-foreground/60 hidden sm:inline">
                                             ({new Date(lock.lastOpen).toLocaleTimeString()})
                                           </span>
                                         </>

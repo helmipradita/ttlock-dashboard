@@ -251,7 +251,7 @@ export function RetentionSection({ onOpenLock }: Props) {
     <div className="space-y-6">
       {/* Control Deck: Mandatory Gateway Selection & Date Filter */}
       <div className="rounded-lg border border-border bg-card text-card-foreground p-4 sm:p-5 space-y-4">
-        <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
               <div className="w-2.5 h-2.5 rounded-full bg-primary" />
@@ -264,42 +264,16 @@ export function RetentionSection({ onOpenLock }: Props) {
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* View Switcher: Chart vs Table */}
-            <div className="flex items-center border border-border rounded-md p-0.5 bg-muted/30">
-              <button
-                onClick={() => setViewMode("chart")}
-                className={`h-6 px-2.5 text-xs font-medium rounded flex items-center gap-1.5 transition-colors cursor-pointer ${
-                  viewMode === "chart"
-                    ? "bg-background text-foreground shadow-xs"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <LineChart className="w-3.5 h-3.5" />
-                <span>Chart</span>
-              </button>
-              <button
-                onClick={() => setViewMode("table")}
-                className={`h-6 px-2.5 text-xs font-medium rounded flex items-center gap-1.5 transition-colors cursor-pointer ${
-                  viewMode === "table"
-                    ? "bg-background text-foreground shadow-xs"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <TableIcon className="w-3.5 h-3.5" />
-                <span>Log Table</span>
-              </button>
-            </div>
-
+          <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
             <Button
               variant="outline"
               size="sm"
               disabled={isFetching}
-              className="h-7 px-2.5 text-xs gap-1.5 border-border shadow-none"
+              className="h-7 px-2.5 text-xs gap-1.5 border-border shadow-none whitespace-nowrap cursor-pointer"
               onClick={() => refetch()}
               title="Refresh database timeseries records"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${isFetching ? "animate-spin text-primary" : ""}`} />
+              <RefreshCw className={`w-3.5 h-3.5 ${isFetching ? "motion-safe:animate-spin text-primary" : ""}`} />
               <span>{isFetching ? "Refreshing..." : "Refresh"}</span>
             </Button>
 
@@ -308,7 +282,7 @@ export function RetentionSection({ onOpenLock }: Props) {
               size="sm"
               disabled={!isFilterReady || isExportingPdf || lockSeries.length === 0}
               onClick={handleExportPdf}
-              className="h-7 px-2.5 text-xs gap-1.5 border-border shadow-none font-medium cursor-pointer"
+              className="h-7 px-2.5 text-xs gap-1.5 border-border shadow-none font-medium cursor-pointer whitespace-nowrap"
               title={
                 !isFilterReady
                   ? "Select a Target Gateway and Date first to download PDF report"
@@ -317,7 +291,7 @@ export function RetentionSection({ onOpenLock }: Props) {
             >
               {isExportingPdf ? (
                 <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
+                  <Loader2 className="w-3.5 h-3.5 motion-safe:animate-spin text-primary" />
                   <span>Generating PDF...</span>
                 </>
               ) : (
@@ -330,12 +304,14 @@ export function RetentionSection({ onOpenLock }: Props) {
           </div>
         </div>
 
-        {/* Toolbar: Gateway Dropdown (Mandatory Multi-Select) & Date */}
-        <div className="flex items-center gap-3.5 flex-wrap text-xs pt-2 border-t border-border/40">
+        {/* Toolbar: Gateway Multi-Select, Date Filter, and View Mode Switcher */}
+        <div className="flex items-center gap-3 sm:gap-4 flex-wrap text-xs pt-3 border-t border-border/40">
           {/* Gateway Multi-Select */}
-          <div className="flex items-center gap-1.5">
-            <Radio className="w-3.5 h-3.5 text-primary" />
-            <span className="font-semibold text-foreground">Target Gateway(s):</span>
+          <div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap">
+            <span className="font-semibold text-foreground whitespace-nowrap flex items-center gap-1.5">
+              <Radio className="w-3.5 h-3.5 text-primary" />
+              <span>Target Gateway(s):</span>
+            </span>
             <GatewayMultiSelect
               gateways={availableGateways}
               selectedIds={selectedGatewayIds}
@@ -344,8 +320,8 @@ export function RetentionSection({ onOpenLock }: Props) {
           </div>
 
           {/* Date Selector */}
-          <div className="flex items-center gap-1.5">
-            <span className="font-semibold text-foreground">Date:</span>
+          <div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap">
+            <span className="font-semibold text-foreground whitespace-nowrap">Date:</span>
             <ModernDateSelect
               dates={availableDates}
               selectedDate={selectedDate}
@@ -353,9 +329,35 @@ export function RetentionSection({ onOpenLock }: Props) {
             />
           </div>
 
+          {/* View Switcher: Chart vs Table */}
+          <div className="flex items-center border border-border rounded-md p-0.5 bg-muted/30">
+            <button
+              onClick={() => setViewMode("chart")}
+              className={`h-6 px-2.5 text-xs font-medium rounded flex items-center gap-1.5 transition-colors cursor-pointer ${
+                viewMode === "chart"
+                  ? "bg-background text-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <LineChart className="w-3.5 h-3.5" />
+              <span>Chart</span>
+            </button>
+            <button
+              onClick={() => setViewMode("table")}
+              className={`h-6 px-2.5 text-xs font-medium rounded flex items-center gap-1.5 transition-colors cursor-pointer ${
+                viewMode === "table"
+                  ? "bg-background text-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <TableIcon className="w-3.5 h-3.5" />
+              <span>Log Table</span>
+            </button>
+          </div>
+
           {isFilterReady && (
-            <span className="text-xs text-muted-foreground ml-auto hidden sm:inline tabular-nums">
-              Showing <strong>{lockSeries.length}</strong> lockbox series ({(rawSnapshots || []).length} data points across {selectedGatewayIds.length} gateway{selectedGatewayIds.length > 1 ? "s" : ""})
+            <span className="text-xs text-muted-foreground ml-auto hidden md:inline tabular-nums">
+              Showing <strong>{lockSeries.length}</strong> lockbox series ({(rawSnapshots || []).length} logs across {selectedGatewayIds.length} gateway{selectedGatewayIds.length > 1 ? "s" : ""})
             </span>
           )}
         </div>
@@ -671,8 +673,8 @@ export function RetentionSection({ onOpenLock }: Props) {
               <span className="text-[11px] text-muted-foreground/80">Sorted newest to oldest</span>
             </div>
 
-            <Table containerClassName="overflow-visible">
-              <TableHeader className="bg-muted/40 border-b border-border">
+            <Table containerClassName="overflow-x-auto rounded-b-lg border-t border-border" className="min-w-[760px]">
+              <TableHeader className="bg-muted/50 border-b border-border">
                 <TableRow className="hover:bg-transparent">
                   <TableHead className="w-44 text-xs font-semibold text-foreground">Recorded Time</TableHead>
                   <TableHead className="w-24 text-xs font-semibold text-foreground">Lock ID</TableHead>

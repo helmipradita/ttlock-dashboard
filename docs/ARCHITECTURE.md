@@ -18,7 +18,7 @@ graph TB
         SPA --- PdfGen
     end
 
-    subgraph ContainerProxy["Container: web-nginx (:5757)"]
+    subgraph ContainerProxy["Container: web-nginx (${WEB_PORT:-5757})"]
         NginxProxy["Nginx Web Server"]
         StaticDist["Static Assets (HTML / JS / CSS)"]
         NginxProxy -->|"Serve Static"| StaticDist
@@ -26,7 +26,7 @@ graph TB
 
     subgraph ContainerBackend["Container: backend (:5000)"]
         ExpressApp["Express.js Server"]
-        ConfigFailFast["Fail-Fast Config (requireEnv)"]
+        ConfigFailFast["Fail-Fast Config (backend/.env)"]
         AuthService["OAuth2 Token Manager"]
         LockService["TTLock Service Client"]
         SignalMapper["Gateway Signal & Telemetry Mapper"]

@@ -13,9 +13,15 @@ interface LockSelect {
   n: number;
 }
 
+interface GatewaySelect {
+  id: number;
+  n: number;
+}
+
 export default function App() {
   useTheme(); // Initialize and listen to system/stored theme
   const [lockSelect, setLockSelect] = useState<LockSelect | null>(null);
+  const [gatewaySelect, setGatewaySelect] = useState<GatewaySelect | null>(null);
   const [tab, setTab] = useState("locks");
 
   useEffect(() => {
@@ -55,22 +61,27 @@ export default function App() {
     }, 100);
   }
 
+  function handleOpenGateway(gatewayId: number) {
+    setGatewaySelect((s) => ({ id: gatewayId, n: (s?.n ?? 0) + 1 }));
+    setTab("gateways");
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       <AppHeader />
-      <main className="max-w-6xl w-full mx-auto px-6 py-6 space-y-6 flex-1">
+      <main className="max-w-6xl w-full mx-auto px-3 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6 flex-1">
         <Tabs value={tab} onValueChange={setTab}>
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <TabsList className="h-9 p-1 bg-muted border border-border rounded-md">
-              <TabsTrigger value="locks" className="gap-1.5 text-xs px-3 py-1 font-medium">
+          <div className="flex items-center justify-between flex-wrap gap-2.5 sm:gap-3">
+            <TabsList className="h-9 p-1 bg-muted border border-border rounded-md overflow-x-auto max-w-full">
+              <TabsTrigger value="locks" className="gap-1.5 text-xs px-2.5 sm:px-3 py-1 font-medium whitespace-nowrap">
                 <Lock className="w-3.5 h-3.5" />
                 <span>Lockboxes</span>
               </TabsTrigger>
-              <TabsTrigger value="gateways" className="gap-1.5 text-xs px-3 py-1 font-medium">
+              <TabsTrigger value="gateways" className="gap-1.5 text-xs px-2.5 sm:px-3 py-1 font-medium whitespace-nowrap">
                 <Network className="w-3.5 h-3.5" />
                 <span>Gateways</span>
               </TabsTrigger>
-              <TabsTrigger value="retention" className="gap-1.5 text-xs px-3 py-1 font-medium">
+              <TabsTrigger value="retention" className="gap-1.5 text-xs px-2.5 sm:px-3 py-1 font-medium whitespace-nowrap">
                 <History className="w-3.5 h-3.5" />
                 <span>Signal Retention</span>
               </TabsTrigger>
@@ -85,18 +96,19 @@ export default function App() {
 
           <TabsContent value="locks" className="space-y-6 mt-4">
             <div className="relative z-20">
-              <LockHistorySection lockSelect={lockSelect} />
+              <LockHistorySection lockSelect={lockSelect} onGatewaySelect={handleOpenGateway} />
             </div>
             <div className="relative z-10">
               <AllLockboxesSection
                 onLockSelect={handleLockSelect}
                 selectedLockId={lockSelect?.id ?? null}
+                onGatewaySelect={handleOpenGateway}
               />
             </div>
           </TabsContent>
 
           <TabsContent value="gateways" className="mt-4">
-            <GatewaysSection onOpenLock={handleOpenLock} />
+            <GatewaysSection onOpenLock={handleOpenLock} gatewaySelect={gatewaySelect} />
           </TabsContent>
 
           <TabsContent value="retention" className="mt-4">
