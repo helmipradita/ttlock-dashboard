@@ -39,7 +39,7 @@ This document outlines the software libraries, frameworks, runtime engines, and 
 
 | Component | Technology | Role & Responsibility |
 |---|---|---|
-| **Reverse Proxy** | Nginx Alpine | Proxies `/api/*` requests to backend port 5000 and serves static frontend assets at port 5757 with fine-grained caching headers. |
+| **Reverse Proxy** | Nginx Alpine | Proxies `/api/*` requests directly to backend service (`http://backend`) and serves static frontend assets at port 80. |
 | **Container Engine** | Docker & Docker Compose | Multi-stage build isolation and resource-constrained runtime execution (`limits` & `reservations`). |
 | **Container Registry** | GitHub Container Registry (GHCR) | Automated multi-tag container builds (`latest` and semver release tags) triggered via GitHub Actions. |
 

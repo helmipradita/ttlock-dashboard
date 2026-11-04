@@ -51,10 +51,10 @@ graph TB
         UI --- PdfGen
     end
 
-    subgraph Docker["Docker Host (Port ${WEB_PORT:-5757})"]
-        Nginx["Nginx Reverse Proxy & Static Server"]
-        Backend["Express.js API Service (:5000)<br/>Fail-Fast Config (backend/.env)"]
-        Nginx -->|"/api/*"| Backend
+    subgraph Docker["Docker Host (Port 5757)"]
+        Nginx["Nginx Reverse Proxy & Static Server (:80)"]
+        Backend["Express.js API Service (:80)<br/>Fail-Fast Config (backend/.env)"]
+        Nginx -->|"/api/* (http://backend)"| Backend
         Nginx -->|"Static Build"| UI
     end
 
@@ -76,27 +76,26 @@ Choose the method that best matches your workflow:
 
 Ideal for operators running the dashboard directly on local workstations or production servers.
 
-1. Create a `docker-compose.yml` file in any directory (you can pin `:v1.3.2` or use `:latest`):
+1. Create a `docker-compose.yml` file in any directory (you can pin `:v1.3.4` or use `:latest`):
    ```yaml
    services:
      backend:
-       image: ghcr.io/helmipradita/ttlock-backend:v1.3.3 # or :latest
+       container_name: ttlock-backend
+       image: ghcr.io/helmipradita/ttlock-backend:v1.3.4 # or :latest
        environment:
          - TTLOCK_CLIENT_ID=your_client_id
          - TTLOCK_CLIENT_SECRET=your_client_secret
          - TTLOCK_USERNAME=your_ttlock_email@example.com
          - TTLOCK_PASSWORD_MD5=your_md5_password
-         - PORT=5000
-       expose:
-         - "5000"
        volumes:
          - ./data:/app/data
        restart: unless-stopped
 
-     web-nginx:
-       image: ghcr.io/helmipradita/ttlock-web-nginx:v1.3.3 # or :latest
+     web:
+       container_name: ttlock-web
+       image: ghcr.io/helmipradita/ttlock-web-nginx:v1.3.4 # or :latest
        ports:
-         - "5757:5757" # Remap host port if 5757 conflicts (e.g. "5858:5757")
+         - "5757:80"
        depends_on:
          - backend
        restart: unless-stopped
@@ -108,6 +107,7 @@ Ideal for operators running the dashboard directly on local workstations or prod
    ```
 
 3. Access the dashboard in your browser at **`http://localhost:5757`**.
+   *(To use a different port, change `"5757:80"` to e.g. `"8080:80"`).*
 
 ---
 
@@ -122,7 +122,7 @@ cd ttlock-dashboard
 
 # 2. Setup environment configuration
 make setup
-# Populate TTLOCK_CLIENT_ID, TTLOCK_CLIENT_SECRET, TTLOCK_USERNAME, TTLOCK_PASSWORD_MD5, PORT (5000), and WEB_PORT (5757) in backend/.env
+# Populate TTLOCK_CLIENT_ID, TTLOCK_CLIENT_SECRET, TTLOCK_USERNAME, TTLOCK_PASSWORD_MD5 in backend/.env
 
 # 3. Launch application services
 make up
@@ -133,6 +133,8 @@ make up
 # 4. Open dashboard
 # http://localhost:5757
 ```
+
+> **Tip — Changing Host Port:** The web dashboard defaults to port `5757` (`http://localhost:5757`). To use another host port, update the `ports:` line in `docker-compose.yml` (e.g. change `"5757:80"` to `"8080:80"`).
 
 > **Makefile Shortcuts:** Use `make help` to inspect available automation targets (`make up`, `make down`, `make logs`, `make rebuild`, `make test`). You **do not need** to execute `npm run build` locally on the host; Docker handles compilation via multi-stage builds.
 

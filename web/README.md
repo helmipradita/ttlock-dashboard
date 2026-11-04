@@ -22,6 +22,9 @@ Modern frontend web interface powered by **React 19 + Vite 5.4 + TypeScript + Ta
 
 ```
 web/
+├── Dockerfile                 # Multi-stage production container build (EXPOSE 80)
+├── .dockerignore
+├── nginx.conf                 # Nginx reverse proxy configuration (listen 80; proxy_pass http://backend)
 ├── public/
 │   ├── favicon.png            # Browser tab favicon
 │   └── ttlock-logo.webp       # Brand logo
@@ -29,24 +32,28 @@ web/
 │   ├── api/                   # Typed API client & response interfaces
 │   ├── components/
 │   │   ├── layout/            # AppHeader, ThemeToggle
-│   │   ├── ui/                # Accessible shadcn/ui primitives
+│   │   ├── ui/                # Accessible shadcn/ui primitives & modern selectors
 │   │   ├── AllLockboxesSection.tsx
 │   │   ├── GatewaysSection.tsx
 │   │   ├── InlineTopology.tsx
 │   │   ├── LockHistorySection.tsx
 │   │   ├── PasscodeModal.tsx
+│   │   ├── RetentionSection.tsx
+│   │   ├── SignalFluctuationModal.tsx
 │   │   ├── UnlockTerminal.tsx
 │   │   └── status.tsx
 │   ├── hooks/                 # useTheme
-│   ├── lib/                   # Formatting utilities, styling, pdf-report.ts
+│   ├── lib/                   # Formatting utilities, styling, pdf generators
 │   └── topology/              # Dynamic Canvas topology graph renderer
 ├── test/
-│   └── format.test.ts         # Native Node 22 unit test suites
+│   ├── format.test.ts         # Native Node 22 date & signal test suites
+│   ├── ledger.test.ts         # Ledger filtering and search verification
+│   └── pdf-table.test.ts      # Telemetry triage sorting & color verification
 ├── index.html
 ├── package.json
 ├── tsconfig.json
 ├── components.json
-└── vite.config.ts
+└── vite.config.ts             # Fail-fast dev proxy configuration
 ```
 
 ---

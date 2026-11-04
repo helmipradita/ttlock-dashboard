@@ -5,7 +5,7 @@ CYAN  := \033[36m
 GREEN := \033[32m
 RESET := \033[0m
 
-COMPOSE := docker compose --env-file backend/.env
+COMPOSE := docker compose
 
 .PHONY: help setup up down restart build rebuild rebuild-web rebuild-backend logs logs-backend logs-web ps test lint clean
 
@@ -38,8 +38,8 @@ build: ## Build docker images without cache
 rebuild: ## Rebuild images and start containers
 	$(COMPOSE) up -d --build
 
-rebuild-web: ## Rebuild only web-nginx container (frontend UI changes)
-	$(COMPOSE) up -d --build web-nginx
+rebuild-web: ## Rebuild only web container (frontend UI changes)
+	$(COMPOSE) up -d --build web
 
 rebuild-backend: ## Rebuild only backend container (Express API changes)
 	$(COMPOSE) up -d --build backend
@@ -50,8 +50,8 @@ logs: ## Stream live logs from all containers
 logs-backend: ## Stream live logs from backend container
 	$(COMPOSE) logs -f backend
 
-logs-web: ## Stream live logs from web-nginx container
-	$(COMPOSE) logs -f web-nginx
+logs-web: ## Stream live logs from web container
+	$(COMPOSE) logs -f web
 
 ps: ## Check running containers and port status
 	$(COMPOSE) ps

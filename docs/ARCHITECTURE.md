@@ -18,13 +18,13 @@ graph TB
         SPA --- PdfGen
     end
 
-    subgraph ContainerProxy["Container: web-nginx (${WEB_PORT:-5757})"]
+    subgraph ContainerProxy["Container: ttlock-web (:80)"]
         NginxProxy["Nginx Web Server"]
         StaticDist["Static Assets (HTML / JS / CSS)"]
         NginxProxy -->|"Serve Static"| StaticDist
     end
 
-    subgraph ContainerBackend["Container: backend (:5000)"]
+    subgraph ContainerBackend["Container: ttlock-backend (:80)"]
         ExpressApp["Express.js Server"]
         ConfigFailFast["Fail-Fast Config (backend/.env)"]
         AuthService["OAuth2 Token Manager"]
@@ -44,7 +44,7 @@ graph TB
     end
 
     SPA -->|"HTTP Request / On-Demand"| NginxProxy
-    NginxProxy -->|"/api/* Proxy Pass"| ExpressApp
+    NginxProxy -->|"/api/* Proxy Pass (http://backend)"| ExpressApp
     LockService -->|"HTTPS / form-urlencoded"| TTLockCloud
 ```
 
@@ -60,8 +60,8 @@ sequenceDiagram
     autonumber
     actor User as Operator / User
     participant Web as React Web (PasscodeModal)
-    participant Nginx as Nginx Proxy (:5757)
-    participant Backend as Express API (:5000)
+    participant Nginx as Nginx Proxy (:80)
+    participant Backend as Express API (http://backend)
     participant TTLock as TTLOCK Cloud API
 
     User->>Web: Click "Get PIN" on Lock Detail
@@ -83,8 +83,8 @@ sequenceDiagram
     autonumber
     actor User as Operator / User
     participant Web as React Web (UnlockTerminal)
-    participant Nginx as Nginx Proxy (:5757)
-    participant Backend as Express API (:5000)
+    participant Nginx as Nginx Proxy (:80)
+    participant Backend as Express API (http://backend)
     participant TTLock as TTLOCK Cloud API
 
     User->>Web: Click "Unlock" & "Confirm Unlock"
@@ -377,7 +377,7 @@ graph TD
 
 The application is deployed as two lightweight Docker containers:
 
-| Service | Base Image | Internal Port | Exposed Port | Role & Responsibility |
-|---|---|---|---|---|
-| **`web-nginx`** | `nginx:alpine` | 5757 | **5757** | Serves static React production bundle & reverse-proxies `/api/*` to backend. |
-| **`backend`** | `node:22-alpine` | 5000 | *Not directly exposed* | Express API server, OAuth2 manager, telemetry aggregator, and TTLOCK client. |
+| Service | Container Name | Base Image | Internal Port | Exposed Port | Role & Responsibility |
+|---|---|---|---|---|---|
+| **`web`** | `ttlock-web` | `nginx:alpine` | 80 | **5757** | Serves static React production bundle & reverse-proxies `/api/*` to backend. |
+| **`backend`** | `ttlock-backend` | `node:22-alpine` | 80 | *Not directly exposed* | Express API server, OAuth2 manager, telemetry aggregator, and TTLOCK client. |

@@ -33,14 +33,23 @@ export class TelemetryService {
   private db: DatabaseSync;
 
   constructor(customPath?: string) {
+    const isTest =
+      process.env.NODE_ENV === "test" ||
+      Boolean(process.env.NODE_TEST_CONTEXT) ||
+      process.execArgv.includes("--test");
+
     const dbPath =
       customPath ||
       process.env.DB_PATH ||
-      (process.env.NODE_ENV === "production" && fs.existsSync("/app/data")
-        ? "/app/data/telemetry.db"
-        : path.resolve(__dirname, "../../data/telemetry.db"));
+      (isTest
+        ? ":memory:"
+        : process.env.NODE_ENV === "production" && fs.existsSync("/app/data")
+          ? "/app/data/telemetry.db"
+          : path.resolve(__dirname, "../../data/telemetry.db"));
 
-    fs.mkdirSync(path.dirname(dbPath), { recursive: true });
+    if (dbPath !== ":memory:") {
+      fs.mkdirSync(path.dirname(dbPath), { recursive: true });
+    }
     this.db = new DatabaseSync(dbPath);
     this.initSchema();
   }

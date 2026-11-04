@@ -22,10 +22,6 @@ export function getAuthStatus() {
   return apiFetch<AuthStatus>("/api/auth/status");
 }
 
-export function getLocks() {
-  return apiFetch<{ list: Lock[]; total: number }>("/api/locks");
-}
-
 export function getEnrichedLocks() {
   return apiFetch<{ list: Lock[]; total: number }>("/api/locks/enriched");
 }

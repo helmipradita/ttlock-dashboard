@@ -21,18 +21,25 @@ API Gateway service built with **Node.js + Express.js + TypeScript** managing in
 
 ```
 backend/
-├── src/
-│   ├── config.ts              # Environment configuration loader (.env)
-│   ├── main.ts                # Express server bootstrapper
-│   ├── routes/
-│   │   └── ttlock.routes.ts   # REST API route definitions
-│   └── services/
-│       └── ttlock.service.ts  # TTLOCK client, OAuth2 manager, cache
-├── test/
-│   └── ttlock.test.ts         # Native Node 22 unit test suites
-├── .env.example               # Template environment
+├── Dockerfile                 # Multi-stage production container build (EXPOSE 80)
+├── .dockerignore
+├── .env.example               # Template environment credentials (TTLOCK_*)
+├── .gitignore
 ├── package.json
-└── tsconfig.json
+├── tsconfig.json
+├── test/
+│   ├── ttlock.test.ts         # Native Node 22 error mapping & env tests
+│   ├── telemetry.test.ts      # SQLite in-memory telemetry & deduplication tests
+│   └── cron.test.ts           # Background timer initialization tests
+└── src/
+    ├── config.ts              # Fail-fast environment configuration loader
+    ├── main.ts                # Express server bootstrapper
+    ├── routes/
+    │   └── ttlock.routes.ts   # REST API route definitions
+    └── services/
+        ├── ttlock.service.ts  # TTLOCK client, OAuth2 manager, cache
+        ├── telemetry.service.ts # SQLite persistent telemetry storage
+        └── cron.service.ts    # Background hourly telemetry capture scheduler
 ```
 
 ---

@@ -42,7 +42,7 @@ If you wish to deploy the dashboard directly without compiling or checking out s
 - Backend: [`ghcr.io/helmipradita/ttlock-backend`](https://github.com/helmipradita/ttlock-dashboard/pkgs/container/ttlock-backend)
 - Web Nginx: [`ghcr.io/helmipradita/ttlock-web-nginx`](https://github.com/helmipradita/ttlock-dashboard/pkgs/container/ttlock-web-nginx)
 
-Images are published with both `:v1.3.3` (release pinning) and `:latest` tags.
+Images are published with both `:v1.3.4` (release pinning) and `:latest` tags.
 
 ### Option A: Using a Simple `docker-compose.yml` (Recommended)
 
@@ -50,23 +50,22 @@ Images are published with both `:v1.3.3` (release pinning) and `:latest` tags.
    ```yaml
    services:
      backend:
-       image: ghcr.io/helmipradita/ttlock-backend:v1.3.3 # or :latest
+       container_name: ttlock-backend
+       image: ghcr.io/helmipradita/ttlock-backend:v1.3.4 # or :latest
        environment:
          - TTLOCK_CLIENT_ID=your_client_id
          - TTLOCK_CLIENT_SECRET=your_client_secret
          - TTLOCK_USERNAME=your_ttlock_email@example.com
          - TTLOCK_PASSWORD_MD5=your_md5_password
-         - PORT=5000
-       expose:
-         - "5000"
        volumes:
          - ./data:/app/data
        restart: unless-stopped
 
-     web-nginx:
-       image: ghcr.io/helmipradita/ttlock-web-nginx:v1.3.3 # or :latest
+     web:
+       container_name: ttlock-web
+       image: ghcr.io/helmipradita/ttlock-web-nginx:v1.3.4 # or :latest
        ports:
-         - "5757:5757"
+         - "5757:80"
        depends_on:
          - backend
        restart: unless-stopped
@@ -77,6 +76,7 @@ Images are published with both `:v1.3.3` (release pinning) and `:latest` tags.
    docker compose up -d
    ```
    Docker automatically pulls the latest GHCR images and starts the application at **`http://localhost:5757`**.
+   *(To use a different port, change `"5757:80"` in `docker-compose.yml` to e.g. `"8080:80"`).*
 
 ---
 
@@ -94,14 +94,14 @@ docker run -d --name ttlock-backend --network ttlock-net \
   -e TTLOCK_CLIENT_SECRET="your_client_secret" \
   -e TTLOCK_USERNAME="your_ttlock_email" \
   -e TTLOCK_PASSWORD_MD5="your_md5_password" \
-  -e PORT="5000" \
+  -e PORT="80" \
   -v $(pwd)/data:/app/data \
-  ghcr.io/helmipradita/ttlock-backend:v1.3.3
+  ghcr.io/helmipradita/ttlock-backend:v1.3.4
 
 # 3. Run Web Nginx Frontend Container
 docker run -d --name ttlock-web --network ttlock-net \
-  -p 5757:5757 \
-  ghcr.io/helmipradita/ttlock-web-nginx:v1.3.3
+  -p 5757:80 \
+  ghcr.io/helmipradita/ttlock-web-nginx:v1.3.4
 ```
 
 ---
@@ -118,7 +118,7 @@ cd ttlock-dashboard
 
 # 2. Prepare environment configuration
 make setup
-# Populate required credentials, PORT (5000), and WEB_PORT (5757) in backend/.env
+# Populate required TTLOCK credentials in backend/.env
 
 # 3. Build and launch containers
 make up
@@ -134,12 +134,12 @@ make up
 The dashboard will be accessible at: **`http://localhost:5757`**
 
 > **Technical Build Note:**
-> You **DO NOT** need to execute `npm run build` on your local host. The Dockerfiles (`Dockerfile.web` and `Dockerfile.backend`) utilize **Multi-stage Builds** that install dependencies and compile production artifacts directly within Docker.
+> You **DO NOT** need to execute `npm run build` on your local host. The Dockerfiles (`web/Dockerfile` and `backend/Dockerfile`) utilize **Multi-stage Builds** that install dependencies and compile production artifacts directly within Docker.
 
 ### B. Selective Service Rebuilds (Efficient during development)
 * **Rebuild Frontend only (React / UI changes):**
   ```bash
-  docker compose up -d --build web-nginx
+  docker compose up -d --build web
   ```
 * **Rebuild Backend only (Express / API changes):**
   ```bash

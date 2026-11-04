@@ -34,8 +34,8 @@ jobs:
       - name: Build and Push Backend to GHCR
         uses: docker/build-push-action@v5
         with:
-          context: .
-          file: ./Dockerfile.backend
+          context: ./backend
+          file: ./backend/Dockerfile
           push: true
           tags: |
             ghcr.io/${{ github.repository_owner }}/ttlock-backend:latest
@@ -44,8 +44,8 @@ jobs:
       - name: Build and Push Web-Nginx to GHCR
         uses: docker/build-push-action@v5
         with:
-          context: .
-          file: ./Dockerfile.web
+          context: ./web
+          file: ./web/Dockerfile
           push: true
           tags: |
             ghcr.io/${{ github.repository_owner }}/ttlock-web-nginx:latest

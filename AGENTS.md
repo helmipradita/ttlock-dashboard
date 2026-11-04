@@ -126,16 +126,14 @@ TTLOCK/
 ├── CHANGELOG.md
 ├── AGENTS.md
 ├── docker-compose.yml
-├── Dockerfile.backend
-├── Dockerfile.web
 ├── docs/
 │   ├── ARCHITECTURE.md
 │   ├── TECH_STACK.md
 │   ├── API_REFERENCE.md
 │   └── DEPLOYMENT.md
-├── nginx/
-│   └── nginx.conf
 ├── backend/
+│   ├── Dockerfile
+│   ├── .dockerignore
 │   ├── README.md
 │   ├── .gitignore
 │   ├── .env.example
@@ -155,6 +153,9 @@ TTLOCK/
 │           ├── telemetry.service.ts
 │           └── cron.service.ts
 └── web/
+    ├── Dockerfile
+    ├── .dockerignore
+    ├── nginx.conf
     ├── README.md
     ├── package.json
     ├── tsconfig.json

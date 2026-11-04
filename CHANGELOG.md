@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.4] - 2026-11-04
+
+### Changed
+- **Container Monorepo Architecture**: Relocated root Dockerfiles to `backend/Dockerfile` and `web/Dockerfile`, colocated `web/nginx.conf`, and scoped build contexts cleanly to `./backend` and `./web`.
+- **Simplified Compose Networking**: Streamlined `docker-compose.yml` to standard port mapping `"5757:80"` and eliminated redundant `expose` and `environment: PORT=80` overrides.
+- **Deterministic Container Naming**: Explicitly defined `container_name: ttlock-backend` and `container_name: ttlock-web` to eliminate random `-1` service suffixes.
+- **Isolated Credential Scope**: Removed port variables from `backend/.env` and `backend/.env.example`, keeping backend configuration strictly focused on TTLock API credentials while container defaults to port 80.
+- **Dev Server Proxy Cleanliness**: Simplified Vite proxy configuration to default to `http://localhost:5757` without requiring runtime environment port declarations.
+- **SQLite Test Isolation**: Automated in-memory database fallback (`:memory:`) in `telemetry.service.ts` during test execution to prevent database locks when containers are running.
+
 ## [1.3.3] - 2026-11-04
 
 ### Added
