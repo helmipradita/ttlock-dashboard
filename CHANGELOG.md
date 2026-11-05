@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-11-05
+
+### Added
+- **PIN Passcode Lifecycle Console**: Implemented full lifecycle management for lockbox PINs with support for One-Time (OTP, 6h single-use), Permanent, and Timed (Period with presets or custom window) passcode generation.
+- **Active Passcode Directory & Remote Deletion**: Added real-time passcode registry (`/api/locks/:lockId/passcodes`) retrieving all registered PINs from TTLock API, with inline two-step remote deletion (`DELETE /api/locks/:lockId/passcodes/:passcodeId`) dispatched over online WiFi gateways.
+- **Passcode Gateway Awareness**: Added intelligent gateway connectivity detection warning operators when attempting cloud passcode deletions on standalone unlinked lockboxes.
+
+### Fixed
+- **Mobile Gateway Expanded Lockbox Single-Line Layout**: Replaced wrap behavior with strict single-line flexbox layout and defensive text truncation, keeping action buttons locked at the right edge without vertical stacking.
+- **Signal Fluctuation Modal Mobile Adaptation**: Eliminated horizontal modal dragging on mobile viewports by removing the wide variance column and adapting the table to 100% viewport width with stacked mobile metadata.
+
 ## [1.3.4] - 2026-11-04
 
 ### Changed

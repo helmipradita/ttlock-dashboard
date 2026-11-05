@@ -6,6 +6,9 @@ import type {
   TopologyResponse,
   UnlockResponse,
   PasscodeResponse,
+  PasscodeListResponse,
+  GeneratePasscodePayload,
+  DeletePasscodeResponse,
   TelemetrySnapshotResponse,
   SignalFluctuation,
   GatewayLiveResponse,
@@ -79,9 +82,16 @@ export async function unlockLock(lockId: number): Promise<UnlockResponse> {
   }
 }
 
-export async function getLockPasscode(lockId: number): Promise<PasscodeResponse> {
+export async function generateLockPasscode(
+  lockId: number,
+  payload?: GeneratePasscodePayload
+): Promise<PasscodeResponse> {
   try {
-    const res = await fetch(`/api/locks/${lockId}/passcode`, { method: "POST" });
+    const res = await fetch(`/api/locks/${lockId}/passcode`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload || { type: 1 }),
+    });
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
       return {
@@ -106,6 +116,40 @@ export async function getLockPasscode(lockId: number): Promise<PasscodeResponse>
       ts: new Date().toISOString(),
     };
   }
+}
+
+export function getLockPasscode(lockId: number): Promise<PasscodeResponse> {
+  return generateLockPasscode(lockId, { type: 1 });
+}
+
+export function getLockPasscodes(
+  lockId: number,
+  pageNo = 1,
+  pageSize = 50
+): Promise<PasscodeListResponse> {
+  return apiFetch<PasscodeListResponse>(
+    `/api/locks/${lockId}/passcodes?pageNo=${pageNo}&pageSize=${pageSize}`
+  );
+}
+
+export async function deleteLockPasscode(
+  lockId: number,
+  passcodeId: number,
+  deleteType = 2
+): Promise<DeletePasscodeResponse> {
+  const res = await fetch(
+    `/api/locks/${lockId}/passcodes/${passcodeId}?deleteType=${deleteType}`,
+    { method: "DELETE" }
+  );
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    return {
+      errcode: body.errcode ?? -1,
+      errmsg: body.errmsg ?? `HTTP ${res.status}`,
+      description: body.description ?? null,
+    };
+  }
+  return res.json();
 }
 
 export function saveTelemetrySnapshot(): Promise<TelemetrySnapshotResponse> {

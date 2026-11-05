@@ -56,8 +56,15 @@ export const TTLOCK_ERROR_CODES: Record<number, string> = {
   0: "Success",
   1: "Failed",
   [-3]: "Invalid Parameter",
+  [-2003]: "Passcode does not exist",
+  [-2004]: "Passcode already exists",
+  [-2005]: "Passcode expired",
+  [-2006]: "Exceeds max passcode limit",
+  [-2007]: "Invalid passcode type",
   [-2012]: "Lock not connected to any Gateway",
   [-2018]: "Permission Denied",
+  [-3005]: "Gateway is offline or busy",
+  [-4006]: "Passcode ID not found",
   [-4043]: "Remote unlock not enabled (enable in TTLOCK app lock settings)",
   [-4056]: "Run out of memory (storage full)",
   10000: "Invalid client_id",
@@ -401,27 +408,57 @@ class TTLockService {
     }
   }
 
-  async getOneTimePasscode(lockId: string) {
+  async generatePasscode(
+    lockId: string,
+    options: {
+      type?: number;
+      name?: string;
+      startDate?: number;
+      endDate?: number;
+    } = {}
+  ) {
     const ts = new Date().toISOString();
     try {
+      const type = options.type ?? 1;
       const now = Date.now();
-      // Passcode type 1 = One-time (valid for 6 hours from startDate)
-      // keyboardPwdVersion: lock default is 4
-      // TTLOCK API requires startDate for calculating algorithmic passcode
+
+      // For Timed/Period (type 3), TTLock API requires minutes and seconds to be 0
+      const startDate = options.startDate
+        ? type === 3
+          ? Math.floor(options.startDate / 3600000) * 3600000
+          : options.startDate
+        : type === 3
+          ? Math.floor(now / 3600000) * 3600000
+          : now;
+
+      const params: Record<string, string> = {
+        lockId,
+        keyboardPwdVersion: "4",
+        keyboardPwdType: String(type),
+        startDate: String(startDate),
+      };
+
+      if (type === 3) {
+        // Default to 24 hours if endDate not specified
+        const endDate = options.endDate
+          ? Math.floor(options.endDate / 3600000) * 3600000
+          : startDate + 24 * 3600000;
+        params.endDate = String(endDate);
+      }
+
+      if (options.name?.trim()) {
+        params.keyboardPwdName = options.name.trim();
+      }
+
       const raw = await this.post<{
         errcode?: number;
         errmsg?: string;
         description?: string;
         keyboardPwd?: string;
         keyboardPwdId?: number | string;
-      }>("/v3/keyboardPwd/get", {
-        lockId,
-        keyboardPwdVersion: "4",
-        keyboardPwdType: "1",
-        startDate: now.toString(),
-      });
+      }>("/v3/keyboardPwd/get", params);
 
-      console.log(`[TTLock] Passcode generated for lock ${lockId}, status: ${raw.errcode ?? 0}`);
+      console.log(`[TTLock] Passcode (type ${type}) generated for lock ${lockId}, status: ${raw.errcode ?? 0}`);
 
       if (raw.errcode && raw.errcode !== 0) {
         return {
@@ -435,14 +472,22 @@ class TTLockService {
         };
       }
 
+      const typeNames: Record<number, string> = {
+        1: "One-time (OTP)",
+        2: "Permanent",
+        3: "Timed (Period)",
+      };
+
       return {
         ok: true,
         keyboardPwd: raw.keyboardPwd,
         keyboardPwdId: raw.keyboardPwdId ? Number(raw.keyboardPwdId) : undefined,
         lockId: Number(lockId),
-        type: 1,
-        typeName: "One-time",
-        validHours: 6,
+        type,
+        typeName: typeNames[type] || "Custom",
+        startDate,
+        endDate: params.endDate ? Number(params.endDate) : undefined,
+        validHours: type === 1 ? 6 : undefined,
         ts,
       };
     } catch (err: any) {
@@ -456,6 +501,51 @@ class TTLockService {
         ts,
       };
     }
+  }
+
+  async getOneTimePasscode(lockId: string) {
+    return this.generatePasscode(lockId, { type: 1 });
+  }
+
+  async getPasscodeList(lockId: string, pageNo: string = "1", pageSize: string = "50") {
+    return this.post<{
+      errcode?: number;
+      errmsg?: string;
+      list?: Array<{
+        keyboardPwdId: number;
+        lockId: number;
+        keyboardPwd?: string;
+        keyboardPwdName?: string;
+        keyboardPwdType: number;
+        keyboardPwdVersion?: number;
+        startDate: number;
+        endDate: number;
+        sendDate?: number;
+        isCustom?: number;
+        status?: number;
+      }>;
+      total?: number;
+      pageNo?: number;
+      pageSize?: number;
+      pages?: number;
+    }>("/v3/lock/listKeyboardPwd", {
+      lockId,
+      pageNo,
+      pageSize,
+      orderBy: "1", // descending by creation date
+    });
+  }
+
+  async deletePasscode(lockId: string, keyboardPwdId: number, deleteType: number = 2) {
+    return this.post<{
+      errcode: number;
+      errmsg?: string;
+      description?: string;
+    }>("/v3/keyboardPwd/delete", {
+      lockId,
+      keyboardPwdId: String(keyboardPwdId),
+      deleteType: String(deleteType),
+    });
   }
 
   async getGatewayTopology(gatewayId: string, gatewayInfo?: any): Promise<any> {

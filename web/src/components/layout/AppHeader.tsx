@@ -10,7 +10,11 @@ import { Button } from "@/components/ui/button";
 import { generateTtlockPdfReport } from "@/lib/pdf-report";
 import { SignalFluctuationModal } from "@/components/SignalFluctuationModal";
 
-export function AppHeader() {
+interface AppHeaderProps {
+  onOpenLock?: (lockId: number) => void;
+}
+
+export function AppHeader({ onOpenLock }: AppHeaderProps = {}) {
   const [downloading, setDownloading] = useState(false);
   const [downloadNotice, setDownloadNotice] = useState<string | null>(null);
   const [savingSnapshot, setSavingSnapshot] = useState(false);
@@ -220,6 +224,7 @@ export function AppHeader() {
       <SignalFluctuationModal
         open={fluctuationOpen}
         onClose={() => setFluctuationOpen(false)}
+        onOpenLock={onOpenLock}
       />
     </header>
   );

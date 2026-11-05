@@ -464,16 +464,16 @@ export function GatewaysSection({ onOpenLock, gatewaySelect }: Props) {
                               }}
                               title="Click to view lockbox history"
                             >
-                              <TableCell colSpan={8} className="py-2.5 px-4 sm:px-5">
-                                <div className="flex items-center gap-4 sm:gap-6 ml-2 sm:ml-4 text-xs flex-wrap sm:flex-nowrap">
-                                  <span className="text-xs font-semibold text-foreground w-20 shrink-0 tabular-nums">
+                              <TableCell colSpan={8} className="py-2.5 px-3 sm:px-5">
+                                <div className="flex items-center gap-3 sm:gap-6 ml-1 sm:ml-4 text-xs flex-nowrap">
+                                  <span className="text-xs font-semibold text-foreground w-16 sm:w-20 shrink-0 tabular-nums">
                                     {lock.lockId}
                                   </span>
-                                  <span className="truncate max-w-[180px] font-medium text-foreground">
+                                  <span className="truncate max-w-[120px] sm:max-w-[180px] font-medium text-foreground shrink-0">
                                     {lock.lockAlias || lock.lockName || "None"}
                                   </span>
 
-                                  <div className="w-32 shrink-0">
+                                  <div className="w-28 sm:w-32 shrink-0">
                                     <SignalDot
                                       rssi={lock.rssi}
                                       rssiUpdateDate={scanTs}
@@ -483,7 +483,7 @@ export function GatewaysSection({ onOpenLock, gatewaySelect }: Props) {
                                   </div>
 
                                   {/* Real-time Scan Age & Status Indicator */}
-                                  <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground whitespace-nowrap min-w-0">
+                                  <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground whitespace-nowrap shrink-0">
                                     <span
                                       className={`w-1.5 h-1.5 rounded-full shrink-0 ${
                                         !scanTs
@@ -495,7 +495,7 @@ export function GatewaysSection({ onOpenLock, gatewaySelect }: Props) {
                                     />
                                     <span>
                                       Scanned:{" "}
-                                      <strong className="text-foreground font-normal">
+                                      <strong className="text-foreground font-normal tabular-nums">
                                         {scanTs ? relativeTime(scanTs) : "Never"}
                                       </strong>
                                       {scanTs && (
@@ -507,7 +507,7 @@ export function GatewaysSection({ onOpenLock, gatewaySelect }: Props) {
                                   </div>
 
                                   {/* Last Open Timestamp */}
-                                  <div className="text-[11px] text-muted-foreground whitespace-nowrap min-w-0 inline-flex items-center gap-1">
+                                  <div className="text-[11px] text-muted-foreground whitespace-nowrap shrink-0 inline-flex items-center gap-1">
                                     <span>Last Open: </span>
                                     <strong className="text-foreground font-normal tabular-nums">
                                       {lock.lastOpen ? (
@@ -523,7 +523,7 @@ export function GatewaysSection({ onOpenLock, gatewaySelect }: Props) {
                                     </strong>
                                   </div>
 
-                                  <div className="ml-auto shrink-0 flex items-center gap-1.5">
+                                  <div className="ml-auto shrink-0 flex items-center gap-1.5 pl-2">
                                     <Button
                                       variant="outline"
                                       size="sm"

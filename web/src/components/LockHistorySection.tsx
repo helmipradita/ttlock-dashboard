@@ -314,12 +314,12 @@ export function LockHistorySection({ lockSelect, onGatewaySelect }: Props) {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="gap-1.5 border-border shadow-none whitespace-nowrap"
-                  title="Generate 6-hour offline one-time PIN for physical keypad (works without gateway/internet)"
+                  className="gap-1.5 border-border shadow-none whitespace-nowrap cursor-pointer"
+                  title="Manage offline passcode PINs (OTP, Permanent, Timed) and active credentials"
                   onClick={() => setPasscodeOpen(true)}
                 >
                   <KeyRound className="w-3.5 h-3.5" />
-                  <span>Get PIN</span>
+                  <span>PIN Codes</span>
                 </Button>
                 <Button
                   variant="outline"
@@ -556,6 +556,7 @@ export function LockHistorySection({ lockSelect, onGatewaySelect }: Props) {
           <PasscodeModal
             lockId={lock.lockId}
             lockName={lock.lockAlias || lock.lockName || String(lock.lockId)}
+            hasGateway={lock.hasGateway === 1}
             open={passcodeOpen}
             onClose={() => setPasscodeOpen(false)}
           />

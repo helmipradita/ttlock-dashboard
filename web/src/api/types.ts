@@ -83,12 +83,51 @@ export interface PasscodeResponse {
   lockId: number;
   type?: number;
   typeName?: string;
+  startDate?: number;
+  endDate?: number;
   validHours?: number;
   errcode?: number;
   errmsg?: string;
   description?: string | null;
   human?: string;
   ts: string;
+}
+
+export interface PasscodeItem {
+  keyboardPwdId: number;
+  lockId: number;
+  keyboardPwd?: string;
+  keyboardPwdName?: string;
+  keyboardPwdType: number; // 1 = OTP, 2 = Permanent, 3 = Period, 4 = Delete
+  keyboardPwdVersion?: number;
+  startDate: number;
+  endDate: number;
+  sendDate?: number;
+  isCustom?: number;
+  status?: number;
+}
+
+export interface PasscodeListResponse {
+  errcode?: number;
+  errmsg?: string;
+  list?: PasscodeItem[];
+  total?: number;
+  pageNo?: number;
+  pageSize?: number;
+  pages?: number;
+}
+
+export interface GeneratePasscodePayload {
+  type: number;
+  name?: string;
+  startDate?: number;
+  endDate?: number;
+}
+
+export interface DeletePasscodeResponse {
+  errcode: number;
+  errmsg?: string;
+  description?: string;
 }
 
 export interface TelemetrySnapshotResponse {

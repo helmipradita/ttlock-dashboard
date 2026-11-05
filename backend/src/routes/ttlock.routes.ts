@@ -123,7 +123,13 @@ router.post("/locks/:lockId/unlock", async (req: Request, res: Response) => {
 router.post("/locks/:lockId/passcode", async (req: Request, res: Response) => {
   try {
     const lockId = String(req.params.lockId);
-    const result = await ttlockService.getOneTimePasscode(lockId);
+    const { type, name, startDate, endDate } = req.body || {};
+    const result = await ttlockService.generatePasscode(lockId, {
+      type: type ? Number(type) : 1,
+      name: typeof name === "string" ? name : undefined,
+      startDate: startDate ? Number(startDate) : undefined,
+      endDate: endDate ? Number(endDate) : undefined,
+    });
     res.json(result);
   } catch (err: any) {
     res.status(502).json({
@@ -131,6 +137,36 @@ router.post("/locks/:lockId/passcode", async (req: Request, res: Response) => {
       errcode: -1,
       errmsg: err.message,
       human: "Failed to reach TTLock API",
+    });
+  }
+});
+
+router.get("/locks/:lockId/passcodes", async (req: Request, res: Response) => {
+  try {
+    const lockId = String(req.params.lockId);
+    const pageNo = String(req.query.pageNo || "1");
+    const pageSize = String(req.query.pageSize || "50");
+    const result = await ttlockService.getPasscodeList(lockId, pageNo, pageSize);
+    res.json(result);
+  } catch (err: any) {
+    res.status(502).json({
+      errcode: -1,
+      errmsg: err.message,
+    });
+  }
+});
+
+router.delete("/locks/:lockId/passcodes/:passcodeId", async (req: Request, res: Response) => {
+  try {
+    const lockId = String(req.params.lockId);
+    const passcodeId = Number(req.params.passcodeId);
+    const deleteType = req.query.deleteType ? Number(req.query.deleteType) : 2;
+    const result = await ttlockService.deletePasscode(lockId, passcodeId, deleteType);
+    res.json(result);
+  } catch (err: any) {
+    res.status(502).json({
+      errcode: -1,
+      errmsg: err.message,
     });
   }
 });

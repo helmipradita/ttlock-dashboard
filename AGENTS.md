@@ -91,7 +91,9 @@ cd web && npm test && npm run lint && npm run build
 | `/api/locks/:lockId` | GET | Lock detailed specifications |
 | `/api/locks/:lockId/records` | GET | Paginated unlock record logs |
 | `/api/locks/:lockId/gateway` | GET | Lock's connected gateway info and signal |
-| `/api/locks/:lockId/passcode` | POST | Generate algorithmic offline One-Time Passcode (6 hours) |
+| `/api/locks/:lockId/passcode` | POST | Generate algorithmic offline passcode (OTP, Permanent, Timed) |
+| `/api/locks/:lockId/passcodes` | GET | List all active and registered passcodes for a lock |
+| `/api/locks/:lockId/passcodes/:passcodeId` | DELETE | Delete passcode from lockbox hardware via WiFi Gateway |
 | `/api/locks/:lockId/unlock` | POST | Remote unlock lock via WiFi Gateway |
 | `/api/gateways` | GET | All registered gateways |
 | `/api/gateways/:gatewayId/topology` | GET | Gateway topology (cached 30s) |

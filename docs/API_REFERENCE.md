@@ -132,7 +132,17 @@ Retrieves information about gateways in communication range of the lockbox along
 ---
 
 ### `POST /api/locks/:lockId/passcode`
-Generates an algorithmic One-Time Passcode (6-10 digits) valid for 6 hours from request time. Passcodes are generated via offline time-sync formulas and **can be entered directly on the physical lockbox keypad without requiring gateway or internet connectivity**.
+Generates an algorithmic Passcode PIN for keypad entry. Supports One-Time (`type: 1`), Permanent (`type: 2`), and Timed Period (`type: 3`). Generated passcodes are calculated mathematically based on firmware time-sync and **work 100% offline without requiring gateway or internet connectivity**.
+
+**Request Body (JSON):**
+```json
+{
+  "type": 1, // 1 = OTP (6h single-use), 2 = Permanent, 3 = Timed (Period)
+  "name": "Vendor Access", // Optional passcode name / label
+  "startDate": 1793071899000, // Optional start timestamp in ms (auto-rounded to hour)
+  "endDate": 1793158299000 // Required for type 3: end timestamp in ms (auto-rounded to hour)
+}
+```
 
 **Example Response:**
 ```json
@@ -142,9 +152,53 @@ Generates an algorithmic One-Time Passcode (6-10 digits) valid for 6 hours from 
   "keyboardPwdId": 9876543,
   "lockId": 26136614,
   "type": 1,
-  "typeName": "One-time",
+  "typeName": "One-time (OTP)",
   "validHours": 6,
-  "ts": "2026-10-27T04:00:00.000Z"
+  "startDate": 1793071899000,
+  "ts": "2026-11-05T04:00:00.000Z"
+}
+```
+
+---
+
+### `GET /api/locks/:lockId/passcodes?pageNo=1&pageSize=50`
+Retrieves a paginated list of all active and historical passcodes registered on the lockbox directly from the TTLock cloud registry.
+
+**Example Response:**
+```json
+{
+  "list": [
+    {
+      "keyboardPwdId": 123245206,
+      "lockId": 35792698,
+      "keyboardPwd": "86863302",
+      "keyboardPwdName": "Maintenance",
+      "keyboardPwdType": 1,
+      "startDate": 1791766800000,
+      "endDate": 0,
+      "status": 1
+    }
+  ],
+  "total": 1,
+  "pageNo": 1,
+  "pageSize": 50
+}
+```
+
+---
+
+### `DELETE /api/locks/:lockId/passcodes/:passcodeId?deleteType=2`
+Dispatches a remote passcode deletion command to physically erase the passcode from the lockbox hardware over a connected WiFi Gateway.
+
+**Query Parameters:**
+- `deleteType` (optional, default: `2`): `2` = delete via WiFi Gateway directly over cloud.
+
+**Example Response:**
+```json
+{
+  "errcode": 0,
+  "errmsg": "none error message",
+  "description": null
 }
 ```
 

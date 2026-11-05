@@ -76,12 +76,12 @@ Choose the method that best matches your workflow:
 
 Ideal for operators running the dashboard directly on local workstations or production servers.
 
-1. Create a `docker-compose.yml` file in any directory (you can pin `:v1.3.4` or use `:latest`):
+1. Create a `docker-compose.yml` file in any directory (you can pin `:v1.4.0` or use `:latest`):
    ```yaml
    services:
      backend:
        container_name: ttlock-backend
-       image: ghcr.io/helmipradita/ttlock-backend:v1.3.4 # or :latest
+       image: ghcr.io/helmipradita/ttlock-backend:v1.4.0 # or :latest
        environment:
          - TTLOCK_CLIENT_ID=your_client_id
          - TTLOCK_CLIENT_SECRET=your_client_secret
@@ -93,7 +93,7 @@ Ideal for operators running the dashboard directly on local workstations or prod
 
      web:
        container_name: ttlock-web
-       image: ghcr.io/helmipradita/ttlock-web-nginx:v1.3.4 # or :latest
+       image: ghcr.io/helmipradita/ttlock-web-nginx:v1.4.0 # or :latest
        ports:
          - "5757:80"
        depends_on:
