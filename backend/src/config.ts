@@ -20,8 +20,6 @@ export const config = {
   clientSecret: requireEnv("TTLOCK_CLIENT_SECRET"),
   username: requireEnv("TTLOCK_USERNAME"),
   password: requireEnv("TTLOCK_PASSWORD_MD5"),
+  ttlockBaseUrl: requireEnv("TTLOCK_API_BASE_URL").replace(/\/v3\/?$/, ""),
   port: parseInt(process.env.PORT || "80", 10),
-  ttlockBaseUrl:
-    process.env.TTLOCK_API_BASE_URL?.replace(/\/v3\/?$/, "") ||
-    "https://api.sciener.com",
 };

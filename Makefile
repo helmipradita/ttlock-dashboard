@@ -5,7 +5,7 @@ CYAN  := \033[36m
 GREEN := \033[32m
 RESET := \033[0m
 
-COMPOSE := docker compose
+COMPOSE := docker compose --env-file backend/.env
 
 .PHONY: help setup up down restart build rebuild rebuild-web rebuild-backend logs logs-backend logs-web ps test lint clean
 
